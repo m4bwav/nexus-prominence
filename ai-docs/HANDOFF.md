@@ -11,3 +11,5 @@ Also open:
 - The Workshop description still links the old madnesswright folder (it redirects through a pointer README); point it at this repository on the next upload.
 - Look proposals: [notes/2026-11-11-nexus-overlaps-and-look.md](notes/2026-11-11-nexus-overlaps-and-look.md), one at a time between plays.
 - Level-technique harvest leads 12-19 live in madnesswright (ai-docs/notes/2026-11-11-level-technique-harvest.md); they need an in-game test.
+
+Wiki (2026-11-11): https://github.com/m4bwav/nexus-prominence/wiki is live; how to update it is in notes/2026-11-11-github-wiki.md.
