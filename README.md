@@ -1,5 +1,9 @@
 # Nexus Prominence (Hank Raid) Playground template
 
+![A two-storey cutaway of a grey concrete industrial facility banded with red hazard stripes, showing a roller-shutter garage with a generator and a tapered pylon, stairwells and rooms where a few faceless suited stick figures stand](https://raw.githubusercontent.com/m4bwav/nexus-prominence/main/.github/images/banner.jpg)
+
+A Playground map for MADNESS: Project Nexus, built with [madnesswright](https://github.com/m4bwav/madnesswright), the open-source toolkit for modding the game; this repository was split out of it on 2026-11-11 with its full history. On the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3837705778 Wiki: https://github.com/m4bwav/nexus-prominence/wiki
+
 A Playground map template after the fan collab "NEXUS: HANK RAID | MADNESS COMBAT" (hosted by KJ and DUALITY, 2025): Hank storms the Nexus Prominence control tower from the street, room by room. The requester asked for "a template of this map". The video's art belongs to its animators, so this template copies none of it: it rebuilds the route as ten rooms with the game's own proxies and Nexus enemies, in the collab's gray-and-red look.
 
 Status 2026-11-11 (newest): the camera reaches every corner (`FitCamera`; check with `NexusShots.Render -shotDir <dir> -corners`, which logs OK/OUT per corner) and rooms carry Madness dressing (`Gags`). **Run `python tools/make_decals.py <SceneTools>/Assets/Templates/NexusProminence/Tex` before Build**, or the signs and splats are skipped with a warning. Deployed, not played.
