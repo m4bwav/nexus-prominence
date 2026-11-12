@@ -5,3 +5,6 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 - 2026-11-11 split out of madnesswright with `git subtree split` (22 commits); added LICENSE, SECURITY.md, agent docs, banner, wiki; lab rebuild.sh repointed here; notes and continue prompt moved here.
 
 - 2026-11-11: GitHub wiki written and published for Nexus Prominence build-zj (wikiwright); note in ai-docs/notes/2026-11-11-github-wiki.md.
+
+## 2026-11-12
+- Continue-prompt session: zj still unplayed (mods.log 2026-11-11 21:30). Stopped at the owner-play gate; nothing built or uploaded.
