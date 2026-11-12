@@ -1,5 +1,7 @@
 # Handoff
 
+State on 2026-11-12 (released zj): the owner played build-zj (mods.log 08:43, clean) and said release it. Workshop item 3837705778 updated with change-notes-2026-11-11q.txt and preview workshop-preview-2026-11-12zj.jpg (lab; repo copy 480 px): result OK. Gallery replaced with `previews --clear 7` (gal-zj rooms 1, 2, 4, 6, 7, 10 + film): result 1. Nothing waits on a play. Next: whatever the owner asks; the Workshop description still has no search-menu tags beyond `playground` (proposal stands).
+
 State on 2026-11-12 (check only): mods.log still 2026-11-11 21:30, so build-zj is still unplayed; no rebuild and no upload. Next is unchanged: the owner plays zj, then upload with change-notes-2026-11-11q.txt and refresh the gallery from shots-zj.
 
 State on 2026-11-11 (split): the map moved out of madnesswright (`examples/NexusProminence`) into this repository with its history. The lab rebuild script (`Ai/madnesswright-lab/nexus/rebuild.sh`) now copies the generator from and writes the .sobj into this clone; mpn.py still comes from the madnesswright clone next to it. Earlier state (from madnesswright's handoff) follows.
