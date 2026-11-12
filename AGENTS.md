@@ -17,3 +17,5 @@ Read [README.md](README.md) first. This mod was split out of [madnesswright](htt
 ## Handoff
 
 `ai-docs/HANDOFF.md` holds the state of unfinished work and `ai-docs/log.md` the log. Link documents with relative markdown links.
+
+- Release a played build with `tools/release.sh <build> <change-notes file>` (preview, gallery, wsup upload, gallery replace; `DRY=1` skips the upload). Then add the HANDOFF and log lines.

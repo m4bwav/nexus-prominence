@@ -9,3 +9,4 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 ## 2026-11-12
 - Continue-prompt session: zj still unplayed (mods.log 2026-11-11 21:30). Stopped at the owner-play gate; nothing built or uploaded.
 - 2026-11-12: build-zj played (mods.log 08:43, clean); owner: release it. wsup.exe updated 3837705778 (notes q, preview zj): result OK; gallery --clear 7 with gal-zj + film: result 1.
+- 2026-11-12: tools/release.sh wraps the zj release steps (rediscovering them cost ~8 calls and a 120 s timeout); DRY=1 run on zj rebuilt preview and 6 gallery JPEGs.
