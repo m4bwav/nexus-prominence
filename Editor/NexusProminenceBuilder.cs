@@ -79,7 +79,7 @@ public static class NexusProminenceBuilder
     [MenuItem("Madness/Templates/Build Nexus Prominence _PG")]
     public static void Build()
     {
-        solidCount = 0; tiledMats.Clear(); uvMeshes.Clear();
+        solidCount = 0; tiledMats.Clear(); uvMeshes.Clear(); modelCount = 0; propMeshes.Clear();
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(SrcScene) == null) { Debug.LogError("NexusProminence: " + SrcScene + " not found; pull SceneTools."); return; }
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(DstScene) != null &&
             !Application.isBatchMode && !EditorUtility.DisplayDialog("Nexus Prominence", DstScene + " exists. Overwrite it?", "Overwrite", "Cancel")) return;
@@ -124,6 +124,7 @@ public static class NexusProminenceBuilder
         importer.SetAssetBundleNameAndVariant(BundleLabel, "");
         AssetDatabase.SaveAssets();
         Debug.Log("NexusProminence: " + solidCount + " solid props (Obstacle colliders)");
+        Debug.Log("NexusProminence: " + modelCount + " modelled props");
         Debug.Log("NexusProminence: built " + built.Count + " rooms into " + DstScene + " (label '" + BundleLabel + "'). Select Room_01_StreetCheckpoint, press SYNCH VISUALS, check it, then run scene-lint and the AssetBundle build.");
     }
 
@@ -554,10 +555,26 @@ public static class NexusProminenceBuilder
         { 0.34f, 0.29f, 0.28f, 1f, 0.78f, 0.70f },   // 9 break room: false calm
         { 0.48f, 0.24f, 0.24f, 1f, 0.50f, 0.48f } }; // 10 tower: bright red finale
 
+    // Round 5 (build zo): rooms 3, 5 and 8 still read as one dark box. The film frames are warmer and lighter
+    // there (median film vs map: office 114,40,43 vs 48,34,35; loft 61,39,36 vs 54,38,38; lockers 85,41,40 vs
+    // 39,24,25): a mauve office under white light, a warm brown loft with a red skirting line, a locker room
+    // lit red from above (a red floor pool was tried and read as a rug; dropped). FilmGrade false = the zn light.
+    const bool FilmGrade = true;
+    static readonly Dictionary<int, float[]> FilmGradeLight = new Dictionary<int, float[]> {
+        { 2, new[] { 0.52f, 0.40f, 0.42f, 1f, 0.90f, 0.90f } },   // 3 office: mauve walls, white light
+        { 4, new[] { 0.32f, 0.25f, 0.23f, 1f, 0.80f, 0.70f } },   // 5 loft: warm brown, ledge lit
+        { 7, new[] { 0.42f, 0.25f, 0.25f, 1f, 0.45f, 0.42f } } }; // 8 lockers: red light from above
+
     static void IdentityLights(RoomObj room, int index)
     {
         if (!RoomIdentity || index >= IdentityLight.GetLength(0)) return;
         room.AmbientColor = new Color(IdentityLight[index, 0], IdentityLight[index, 1], IdentityLight[index, 2]);
+        if (FilmGrade && FilmGradeLight.ContainsKey(index))
+        {
+            var g = FilmGradeLight[index];
+            for (int k = 0; k < 6; k++) IdentityLight[index, k] = g[k];
+            room.AmbientColor = new Color(g[0], g[1], g[2]);
+        }
         if (IdentityLight[index, 3] >= 0f)
             foreach (var l in room.GetComponentsInChildren<Light>(true)) l.color = new Color(IdentityLight[index, 3], IdentityLight[index, 4], IdentityLight[index, 5]);
         Debug.Log("NexusProminence: " + room.name + " identity ambient " + room.AmbientColor);
@@ -584,7 +601,12 @@ public static class NexusProminenceBuilder
             case 3: // hazard posts either side of the loading door
                 foreach (var dx in new[] { -1.8f, 1.8f }) for (int k = 0; k < 6; k++) Box(f, "HazardPost", f.x1 - 3f + dx, f.y + 0.4f + k * 0.8f, f.zb - 0.1f, 0.4f, 0.8f, 0.06f, k % 2 == 0 ? "red" : "dark");
                 break;
+            case 2: // office: a light mauve wall dado under the red window, as the film's office wall
+                if (FilmGrade) Box(f, "OfficeDado", f.Cx + 3f, f.y + 0.69f, f.zb - 0.08f, 12.4f, 1.38f, 0.04f, "panel"); // stops under the window frame
+                break;
             case 4: // light strip under the ledge: the high ground is the bright place
+                if (FilmGrade) Box(f, "Skirting", (f.x0 + 0.2f + f.x1 - 5.2f) / 2, f.y + 0.15f, f.zb - 0.08f, f.x1 - 5.4f - f.x0, 0.3f, 0.05f, "red"); // film 8:45 red skirting
+
                 Box(f, "LedgeGlow", (f.Cx - 2f + f.x1 - 1f) / 2, f.y + 3.2f, f.zb - 1.0f, f.x1 - 1f - (f.Cx - 2f) - 0.4f, 0.08f, 0.6f, "lit");
                 break;
             case 5: // parking bay lines on the garage floor
@@ -909,7 +931,7 @@ public static class NexusProminenceBuilder
     {
         Box(f, "BackWindow", f.Cx + 3f, f.y + 3.2f, f.zb - 0.06f, 12f, 3.2f, 0.04f, "screen");
         Box(f, "BackWindowFrame", f.Cx + 3f, f.y + 1.5f, f.zb - 0.15f, 12.4f, 0.25f, 0.2f, "dark");
-        Box(f, "Counter", f.Cx + 3f, f.y + 0.6f, f.zb - 2.2f, 12f, 1.2f, 1.0f, "panel");
+        Model(Box(f, "Counter", f.Cx + 3f, f.y + 0.6f, f.zb - 2.2f, 12f, 1.2f, 1.0f, "panel"), "nx_counter");
         Box(f, "CounterTop", f.Cx + 3f, f.y + 1.25f, f.zb - 2.2f, 12.3f, 0.1f, 1.2f, "dark");
         Box(f, "CounterStripe", f.Cx + 3f, f.y + 0.9f, f.zb - 2.72f, 12f, 0.2f, 0.02f, "red");
         Box(f, "NoticeA", f.x0 + 4f, f.y + 3.2f, f.zb - 0.1f, 1.6f, 1.1f, 0.06f, "panel");
@@ -1112,15 +1134,15 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < 6; i++)
         {
             float x = lx + i * 1.15f;
-            Box(f, "Locker", x, f.y + 1.7f, f.zb - 0.6f, 1.1f, 3.4f, 1.0f, "steel");
-            for (int v = 0; v < 3; v++) Box(f, "Vent", x, f.y + 2.9f - v * 0.18f, f.zb - 1.12f, 0.6f, 0.06f, 0.02f, "dark");
-            Box(f, "Handle", x + 0.35f, f.y + 1.8f, f.zb - 1.12f, 0.06f, 0.35f, 0.04f, "dark");
+            Model(Box(f, "Locker", x, f.y + 1.7f, f.zb - 0.6f, 1.1f, 3.4f, 1.0f, "steel"), "nx_locker");
+            for (int v = 0; v < 3; v++) Box(f, "Vent", x, f.y + 2.9f - v * 0.18f, f.zb - (ModelledProps ? 1.16f : 1.12f), 0.6f, 0.06f, 0.02f, "dark");
+            Box(f, "Handle", x + 0.35f, f.y + 1.8f, f.zb - (ModelledProps ? 1.16f : 1.12f), 0.06f, 0.35f, 0.04f, "dark");
         }
         Box(f, "LockerStripLight", lx + 2.9f, f.y + 3.75f, f.zb - 0.5f, 6.6f, 0.16f, 0.3f, "lit"); // bright accent
-        Box(f, "Bench", lx + 3f, f.y + 0.5f, f.zb - 2.4f, 5f, 0.18f, 0.7f, "dark");
+        Model(Box(f, "Bench", lx + 3f, f.y + 0.5f, f.zb - 2.4f, 5f, 0.18f, 0.7f, "dark"), "nx_bench");
         Box(f, "BenchLegA", lx + 1f, f.y + 0.25f, f.zb - 2.4f, 0.15f, 0.5f, 0.5f, "dark");
         Box(f, "BenchLegB", lx + 5f, f.y + 0.25f, f.zb - 2.4f, 0.15f, 0.5f, 0.5f, "dark");
-        Box(f, "Cabinet", f.x1 - 5f, f.y + 1.1f, f.zb - 0.6f, 2.4f, 2.2f, 1.0f, "panel");
+        Model(Box(f, "Cabinet", f.x1 - 5f, f.y + 1.1f, f.zb - 0.6f, 2.4f, 2.2f, 1.0f, "panel"), "nx_cabinet");
         Box(f, "BoardFrame", f.x1 - 9f, f.y + 3.3f, f.zb - 0.1f, 1.4f, 1.8f, 0.1f, "red");
         Box(f, "Board", f.x1 - 9f, f.y + 3.3f, f.zb - 0.16f, 1.1f, 1.5f, 0.04f, "panel");
         Banner(f, f.x1 - 2.2f, f.y + 3.4f, f.zb - 0.1f, false);
@@ -1131,7 +1153,7 @@ public static class NexusProminenceBuilder
     static void BreakRoom(Frame f)
     {
         float cx = f.Cx + 2f;
-        Box(f, "ServeCounter", cx, f.y + 0.7f, f.zb - 1.0f, 10f, 1.4f, 1.4f, "panel");
+        Box(f, "ServeCounter", cx, f.y + 0.7f, f.zb - 1.0f, 10f, 1.4f, 1.4f, "panel"); // round 5 judge kept the zn box here
         Box(f, "ServeTop", cx, f.y + 1.45f, f.zb - 1.0f, 10.3f, 0.1f, 1.6f, "dark");
         Box(f, "ServeStripe", cx, f.y + 1.0f, f.zb - 1.72f, 10f, 0.25f, 0.02f, "red");
         for (int i = 0; i < 3; i++) Box(f, "MenuPanel", cx - 3.4f + i * 3.4f, f.y + 4.1f, f.zb - 0.1f, 2.8f, 1.5f, 0.06f, "screen");
@@ -1166,7 +1188,7 @@ public static class NexusProminenceBuilder
                 Breakable(f, "Monitor" + r + c, new Vector3(x, yy, f.zb - 0.3f), new Vector3(2.0f, 1.1f, 0.2f),
                     new List<GameObject> { screen }, new List<GameObject> { off, crack }, MonitorHits, MonitorHitSound, MonitorBreakSound, MonitorExplosion);
             }
-        Box(f, "Desk", f.Cx, f.y + 0.75f, f.zb - 1.6f, 15f, 1.5f, 1.4f, "panel");
+        Model(Box(f, "Desk", f.Cx, f.y + 0.75f, f.zb - 1.6f, 15f, 1.5f, 1.4f, "panel"), "nx_desk");
         Box(f, "DeskTop", f.Cx, f.y + 1.55f, f.zb - 1.6f, 15.4f, 0.1f, 1.6f, "dark");
         for (int i = 0; i < 4; i++) Box(f, "Keyboard", f.Cx - 5f + i * 3.3f, f.y + 1.63f, f.zb - 1.9f, 1.4f, 0.06f, 0.5f, "black");
         foreach (var x in new[] { f.x0 + 2.5f, f.x0 + 4f, f.x1 - 4f, f.x1 - 2.5f })
@@ -1251,6 +1273,35 @@ public static class NexusProminenceBuilder
         t.position = new Vector3(t.position.x, cy - size / 2 - b.min.y * t.localScale.y, t.position.z);
         if (col != null) { col.size = new Vector3(cs.x * b.size.x, cs.y * b.size.y, cs.z * b.size.z); col.center = b.center; }
     }
+
+    // Round 5 (build zo, concern 5 care and appeal): the most visible box props become modelled props made in
+    // code (tools/make_props.py, lab prop-zo, metres, Y up, centred, at the size of the box they replace), on the
+    // round 3 path: OBJ imported 1:1 into MatDir/Models. The box keeps its place, material and collider size, so
+    // cover and pathing are unchanged. Logs each imported size once. false = the zn boxes.
+    const bool ModelledProps = true;
+    static readonly Dictionary<string, Mesh> propMeshes = new Dictionary<string, Mesh>();
+    static GameObject Model(GameObject s, string obj)
+    {
+        if (!ModelledProps || s == null) return s;
+        Mesh m;
+        if (!propMeshes.TryGetValue(obj, out m))
+        {
+            m = AssetDatabase.LoadAllAssetsAtPath(MatDir + "/Models/" + obj + ".obj").OfType<Mesh>().FirstOrDefault();
+            propMeshes[obj] = m;
+            if (m == null) Debug.LogWarning("NexusProminence: " + MatDir + "/Models/" + obj + ".obj missing; box kept");
+            else Debug.Log("NexusProminence: prop " + obj + " imported size " + m.bounds.size.x.ToString("0.000") + " x " + m.bounds.size.y.ToString("0.000") + " x " + m.bounds.size.z.ToString("0.000"));
+        }
+        if (m == null) return s;
+        var b = m.bounds; var t = s.transform; var size = t.localScale;
+        s.GetComponent<MeshFilter>().sharedMesh = m;
+        t.localScale = new Vector3(size.x / b.size.x, size.y / b.size.y, size.z / b.size.z);
+        t.position -= Vector3.Scale(b.center, t.localScale);
+        var col = s.GetComponent<BoxCollider>();
+        if (col != null) { col.size = b.size; col.center = b.center; }
+        modelCount++;
+        return s;
+    }
+    static int modelCount;
 
     static void OpenCrate(Frame f, float x, float z, float s)
     {

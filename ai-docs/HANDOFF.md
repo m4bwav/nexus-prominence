@@ -2,7 +2,7 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
-Status: in progress, round 4 of 10 done. Last build is zn (round 4, not played; zj is the played one on the Workshop); the next build letter is zo. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
+Status: in progress, round 5 of 10 done. Last build is zo (round 5, not played; zj is the played one on the Workshop); the next build letter is zp. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
 
 Chain goals: madnesswright 1.0 release in round 10 (or after the owner's end test if it depends on in-game proof).
 
@@ -10,11 +10,11 @@ Scorecard (1 poor to 5 good; score each row with one line of evidence at the end
 
 | # | Concern | Score | Evidence | Rounds spent |
 |---|---|---|---|---|
-| 1 | Coherence and interest | 3 | zn: each room has its own light level and colour along an ebb-and-flow arc, one landmark, lit way-in/way-on headers (cmp-zm-zn.jpg); the shell and the fight per room are still the same, so 3 not 4 | 1 |
+| 1 | Coherence and interest | 3 | zo: rooms 3, 5, 8 no longer share one dark grade (FilmGrade); zn: each room has its own light level and colour along an ebb-and-flow arc, one landmark, lit way-in/way-on headers (cmp-zm-zn.jpg); the shell and the fight per room are still the same, so 3 not 4 | 1 |
 | 2 | The Playground room | 4 | zn unchanged; zl: no PX_Playground left (scene-lint prefab_counts, build-zl.log), so no lab booth in the street skyline; the walls are still the sample mesh (concern 3); not played | 1 |
-| 3 | Details and textures | 3 | zn: lighter walls let the round 3 panels read from the game camera (judge: legibility); zm: tiled outlined wall panels and floor slabs on 160 renderers, modelled crate body (shots-zm/Room_04_CargoBay_film.png); most props still boxes; judge preferred zm 4/4 orders, low confidence | 1 |
+| 3 | Details and textures | 3 | zo: modelled counter, desk, lockers, bench, cabinet (box share 0.869); zn: lighter walls let the round 3 panels read from the game camera (judge: legibility); zm: tiled outlined wall panels and floor slabs on 160 renderers, modelled crate body (shots-zm/Room_04_CargoBay_film.png); most props still boxes; judge preferred zm 4/4 orders, low confidence | 1 |
 | 4 | Difficulty and reinforcements | 3 | zn unchanged (landmarks have no colliders; enemies and cover untouched); zm unchanged (no encounter code touched); zl: backup only where the film shows it (rooms 2, 4, 7, 10; 7 squads), other spare doors shut, so no unused entrance is left (S15 clean); room 1 back to 2 agents; not played | 2 |
-| 5 | Care and appeal | 3 | zn: blind judge preferred zn in 6 of 10 rooms after rework; rooms tell apart in the gallery (gal-zn). Before: Sum of 1-4 rises; gal-zm candidates show textures; the page itself is unchanged until upload | 0 |
+| 5 | Care and appeal | 3 | zo: 10 modelled props (counter, desk, 6 lockers, bench, cabinet; build-zo.log sizes 1:1), rooms 3/5/8 graded warmer from film medians; blind judge film-truth zo 4 / zn 2 / tie 4, appeal 3/3/4; description now honest about AI use; preview and gallery ready in lab gal-zo (not uploaded). Built-in cubes are still 87% of meshes (S18 info), so 3 not 4 | 1 |
 
 Baseline (round 1, on build zj, before any change):
 - 1 Coherence and interest: 2. All ten rooms share one shell (band, pilasters, pipe; shots-zj) and one fight: walk in, shoot the placed enemies.
@@ -47,6 +47,21 @@ Round 4 of 10 (2026-11-14, build zn, concern 1 Coherence and interest; branch ro
 - Unverified in game: ambient and lamp colours as the game's lighting renders them; whether the headers read as way in/way on; light tiles in the asset bundle.
 - Toolkit: madnesswright 0.1.34 (PR #120, release v0.1.34, installed): scene-lint S17 warns when all rooms share one AmbientColor; info.room_ambient_luma shows the light arc (zn: 9 values read, one room kept no override).
 - Left rough: rooms 3, 5, 8 still read as one dark box with red trim and get their identity from props; same fight shape in every room; no new cover layouts.
+
+Round 5 plan (concern 5, care and appeal; polywright code route, artwright-judge, everwrite):
+- Film frames (film-match-zn_film) vs map medians: office 114,40,43 vs 48,34,35; loft 61,39,36 vs 54,38,38; lockers 85,41,40 vs 39,24,25. So: warmer, lighter grades for rooms 3, 5, 8 the film supports (mauve office, brown loft with a red skirting line as at 8:45, red light from above in the lockers as at 8:15).
+- Most visible boxes (counter, desk, lockers, bench, cabinet, serve counter) become OBJ props made in code at their box size, on the round 3 1:1 path; the box keeps its collider. No juice changes (none fit without touching the played feel; juice-changes.md unchanged).
+- Page: preview and gallery from shots-zo in the lab, description rewritten with everwrite and honest about AI use, change-notes draft line. Nothing uploaded.
+
+Round 5 of 10 (2026-11-14, build zo, concern 5 Care and appeal; branch round5-appeal):
+- Changed: `ModelledProps` (tools/make_props.py writes nx_counter, nx_desk, nx_locker, nx_bench, nx_cabinet, nx_servecounter into lab prop-zo; `Model()` swaps the box mesh, keeps place, material and collider size; 10 props in zo) and `FilmGrade` (rooms 3, 5, 8 ambient and lamp colour from the film; office dado, loft skirting). Camera, zoom, room sizes, enemies untouched. rebuild.sh now runs make_props.py and copies prop-zo.
+- Evidence: build-zo.log imported sizes equal the authored ones (e.g. nx_counter 12.000 x 1.200 x 1.030). Gates: compiles; corners 0 OUT; scene-lint 0 errors (old S10/S12 warnings; box_share 0.869); check-mod and deploy clean; overlaps room 1: 2 + 1 filler, room 3: 3 (known; a first dado crossed the window frame and was lowered). .sobj 2.35 -> 2.37 MB.
+- Judge (fresh subagent, blind, both orders, rooms 3, 5, 8, 9, 10, game and film cameras, film frames as reference; lab judge-zo/, key judge-zo-key.json): film-truth zo 4, zn 2, tie 4; appeal zo 3, zn 3, tie 4. Reworked: room 9 serve counter back to the box (zn won both there), locker vents and handles moved off the new door frames (judge saw z-fighting seams); a red floor pool in room 8 was dropped before judging (read as a rug). Not re-judged after the rework.
+- Way back: lab sobj-zo/ (sobj-zn/ restores zn), or `ModelledProps = false`, `FilmGrade = false`.
+- Page (local only): lab gal-zo/ (rooms 1, 3, 4, 8, 10 game and film camera, film-match sheet, workshop-preview-zo.jpg); repo renders/workshop-preview-2026-11-14zo.jpg and room-3-zn-vs-zo-2026-11-14zo.jpg (480 px); workshop/description.txt rewritten (everwrite tells: 0 strong); change-notes draft has a line for every round.
+- Unverified in game: the OBJ props in the game's asset bundle and with the in-game outline; how the warmer grades read at game resolution.
+- Left rough: cone lamp shades are crude in several rooms; the film's big saturated red field (office wall, tower glow) is still smaller in the map; bench slats barely read; lockers still show faint seams.
+- Toolkit: madnesswright 0.1.35, scene-lint S18 box share (PR #121).
 
 Round 3 plan (concern 3, details and textures; comfyui-gen, polywright code route, artwright-judge):
 - Film frames (film-match-zl): walls are flat gray with outlined panel seams and faint grime; floors flat light gray slabs; crates have framed edges. So: one wall-panel and one floor-slab tile in that flat outlined style, tinted to the map's existing colours (the look stays gray-and-red, the outline shader stays), UVs in metres so panels keep one size; one hero prop (the crate body, used in several rooms) made in code and imported to prove the scale before any more props.
@@ -104,6 +119,7 @@ End test list (one line per change, filled by each round):
 - Round 3 (zm), textures: walls show outlined metal panels and floors show slabs of one size in every room, nothing stretched or swimming; crates are framed crates and still block movement at their old size (undo: `TexturedSurfaces = false`, `HeroCrate = false`, or sobj-zl).
 - Round 2 (zl), film-true arrivals: room 1 has exactly 2 agents and no one comes even after a shot; rooms 3, 5, 6, 8, 9 get no backup; rooms 2, 4, 7, 10 still do (undo: `FilmTrueArrivals = false`).
 
+- Round 5 (zo), care: in the office, tower and locker room the counter, desk, lockers, bench and cabinet are framed models, nothing floats or clips, and you still take cover behind them as before; the office looks mauve, the loft brown with a red skirting line, the locker room lit red (undo: `ModelledProps = false`, `FilmGrade = false`, or sobj-zn).
 - Round 4 (zn), room identity: walk the route and note whether the light rises and falls (bright office, floodlit bay, dim loft, dark corridor, bright red tower), whether the lit bar over the way in and the red bar over the way on read, and whether walls are now mid gray with visible panels (undo: `RoomIdentity = false`, `LighterWalls = false`, or sobj-zm).
 
 Links side task: done 2026-11-14 (repo and wiki text; mpn-director#1, madnesswright#116, nexus-prominence mod-links PR; wiki Homes pushed). The live Workshop pages still carry the old text until the owner allows a page update.
