@@ -114,6 +114,7 @@ public static class NexusProminenceBuilder
             Dress(room, Rooms[i], i, mats, charPrefab);
         }
         ChainDoors(built);
+        if (!PlaygroundControlRoom) PlacePlayerStart(built[0], frames[built[0]]);
         // after chaining, so the spawn-only doors are never picked as a room's way in or out
         for (int i = 0; i < built.Count; i++) Encounters(built[i], frames[built[i]], i);
         TileUVs(built);
@@ -219,6 +220,24 @@ public static class NexusProminenceBuilder
     {
         foreach (var p in room.GetComponentsInChildren<ProxyObj_Playground>(true)) Object.DestroyImmediate(p.gameObject);
         Debug.Log("NexusProminence: " + room.name + " has no Playground control room (PlaygroundControlRoom off)");
+    }
+
+    // Owner test 2026-11-14 (build zs): the player fell through the world on load. The sample's Player_Start
+    // stands inside the Playground booth, 6 m behind room 1's back wall (world z 13.2 vs back wall 6.81) and 7 m
+    // up; with the booth gone (round 2) there was nothing under it. Put it on room 1's floor at the left
+    // (entry) side, facing into the room, and fail the build if no Floor collider is under it.
+    static void PlacePlayerStart(RoomObj room, Frame f)
+    {
+        var p = room.GetComponentsInChildren<Marker_Player>(true).FirstOrDefault();
+        if (p == null) throw new System.Exception("NexusProminence: room 1 has no Player_Start");
+        p.transform.position = new Vector3(f.x0 + 2.5f, f.y + 0.05f, (f.zf + f.zb) / 2f);
+        p.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        EditorUtility.SetDirty(p.transform);
+        Physics.SyncTransforms();
+        RaycastHit h;
+        bool ok = Physics.Raycast(p.transform.position + Vector3.up * 1f, Vector3.down, out h, 3f) && h.collider.CompareTag("Floor");
+        if (!ok) throw new System.Exception("NexusProminence: no Floor under Player_Start at " + p.transform.position);
+        Debug.Log("NexusProminence: Player_Start on the floor at " + p.transform.position.ToString("F2") + " (hit " + h.collider.name + ")");
     }
 
     // Player_Start and the Playground terminal live only in the first room.
