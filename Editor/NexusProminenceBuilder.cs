@@ -105,11 +105,12 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < Rooms.Length; i++)
         {
             var room = built[i];
+            room.gameObject.name = "Room_" + Rooms[i].Name; // before Stretch, so its log lines name the room
             Stretch(room, Rooms[i].Width * WidthScale, Rooms[i].Depth); // owner 2026-11-11: narrower
             FitCamera(room);
-            room.gameObject.name = "Room_" + Rooms[i].Name;
             room.ForceStartingRoom = i == 0;
             if (i > 0) StripStartOnly(room);
+            else if (!PlaygroundControlRoom) StripControlRoom(room);
             Dress(room, Rooms[i], i, mats, charPrefab);
         }
         ChainDoors(built);
@@ -203,6 +204,19 @@ public static class NexusProminenceBuilder
             }
             else StretchWalk(c, room, ax, az, sx, sz, ref scaled, ref moved);
         }
+    }
+
+    // Round 2 (build zl): the sample's PX_Playground proxy turns in game into the Playground control room
+    // (Converter_Proxy.ReplaceProxy: Library.Proxy_Playground, window masked through the back wall), a white
+    // lab booth showing through room 1's city skyline: the Workshop's "playground room for no reason". The
+    // map loads without it (it is loaded from the Default Chamber's terminal; difficulty is global; the pause
+    // menu still returns to the menu). True puts the booth back in room 1 with its spawn and stage menus.
+    const bool PlaygroundControlRoom = false;
+
+    static void StripControlRoom(RoomObj room)
+    {
+        foreach (var p in room.GetComponentsInChildren<ProxyObj_Playground>(true)) Object.DestroyImmediate(p.gameObject);
+        Debug.Log("NexusProminence: " + room.name + " has no Playground control room (PlaygroundControlRoom off)");
     }
 
     // Player_Start and the Playground terminal live only in the first room.

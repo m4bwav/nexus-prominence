@@ -18,7 +18,7 @@ Difficulty climbs as you go: guards start unaware, then hunt you, then come in s
 
 A template inspired by the fan collab "NEXUS: HANK RAID" (watch it: https://www.youtube.com/watch?v=v0suvMY3GgM). No art from the video is used; the rooms are built from simple shapes drawn with the game's own outlined terrain shader, in a gray-and-red look; solid-looking props block movement.
 
-Use: enable the mod from the gear icon, open the Playground terminal and load Nexus Prominence.
+Use: enable the mod from the gear icon, set the difficulty at the Playground terminal in the Default Chamber, then load Nexus Prominence from it. The map has no Playground control room of its own (no spawn menu inside); leave through the pause menu.
 
 Early test build: tell us about doors that don't connect, rooms you can't clear or walls in odd places.
 Reinforcements: every room sends backup through its side doors once you have thinned the guards out; in the first three rooms backup comes only if the alarm goes up. The cargo bay also gets a rappel team, the spotlight corridor agents from the vents, and the control tower a last big wave. Timed spike strips in the shutter garage and spotlight corridor. Not yet confirmed in play since the last update: if backup never arrives, or arrives too early, say so in the comments.

@@ -16,6 +16,10 @@ Reinforcements 2026-11-14 (build zk, ten rounds round 1): the game lets a wave s
 
 ![Rooms 4, 7 and 10 of build zk](renders/rooms-4-7-10-2026-11-14zk.jpg)
 
+No Playground room 2026-11-14 (build zl, ten rounds round 2): room 1 used to keep the sample's `PX_Playground` proxy, which the game turns into the Playground control room (`Converter_Proxy.ReplaceProxy`), a white lab booth about 4 x 9 x 15 m whose window was masked through the street checkpoint's city skyline. A player called it "a playground room for no reason". Toggle `PlaygroundControlRoom` (off) leaves it out; the decompiled game shows the map does not need it (it is loaded from the Default Chamber's terminal, difficulty is global, the pause menu still leaves). Without it there is no in-map spawn or stage menu: set the difficulty in the Default Chamber before loading. Editor renders cannot show the booth (it exists only in game), so the room 1 render is the same as zk: renders/room-1-2026-11-14zl.jpg. Not played.
+
+![Room 1 of build zl, the street checkpoint with no control room window](renders/room-1-2026-11-14zl.jpg)
+
 Juice 2026-11-11: shootable set pieces from the film (room 2 display glass, room 7 lamps, room 10 monitor wall) via `Breakable` and `CustomObj_Destructible`; toggle `JuiceBreakables`; details and revert in [juice-changes.md](juice-changes.md). Not played yet.
 
 ## Rooms (left to right, each door chains to the next)
@@ -35,7 +39,7 @@ Sets per room are in the generator (`Street`, `WantedHall`, ...); the Workshop d
 | 9 | Break room | 3 agents, 1 support, 1 scientist | combat | Med cabinet | R_NS-V.10 | Hard |
 | 10 | Control tower | 2 soldats, 2 riot guards, 1 engineer, 2 agents | combat | Med cabinet, ammo, grenade ammo | R_Hrifle_NFAL | Very hard |
 
-Player start and the Playground terminal stay in room 1. Weapons follow the film (`Loadout` in the generator, the game's own card names): rifles at the street checkpoint, pistols and SMGs in the hall, riot guards with `Shield_RiotLight` and a pistol, soldats with `R_Hrifle_NFAL`, scouts and a few later agents with `M_SwordNexus`; support, engineers and scientists keep their defaults. Wall signs and splats find a clear patch of wall (`CollectWallBusy`) or are dropped with a `no clear wall` log line. The Workshop preview comes from `tools/make_preview.py` over the room shots.
+Player start stays in room 1; the Playground control room is left out (toggle `PlaygroundControlRoom`). Weapons follow the film (`Loadout` in the generator, the game's own card names): rifles at the street checkpoint, pistols and SMGs in the hall, riot guards with `Shield_RiotLight` and a pistol, soldats with `R_Hrifle_NFAL`, scouts and a few later agents with `M_SwordNexus`; support, engineers and scientists keep their defaults. Wall signs and splats find a clear patch of wall (`CollectWallBusy`) or are dropped with a `no clear wall` log line. The Workshop preview comes from `tools/make_preview.py` over the room shots.
 
 ## Use it
 

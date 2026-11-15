@@ -2,17 +2,17 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
-Status: in progress, round 1 of 10 done. Last build is zk (round 1, not played; zj is the played one on the Workshop); the next build letter is zl. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
+Status: in progress, round 2 of 10 done. Last build is zl (round 2, not played; zj is the played one on the Workshop); the next build letter is zm. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
 
 Scorecard (1 poor to 5 good; score each row with one line of evidence at the end of every round; round 1 sets the baseline before it changes anything):
 
 | # | Concern | Score | Evidence | Rounds spent |
 |---|---|---|---|---|
-| 1 | Coherence and interest | 2 | Ten rooms share one shell and one kind of fight; round 1 only added backup (shots-zk = shots-zj) | 0 |
-| 2 | The Playground room | 2 | Playground terminal still in room 1 (scene-lint PX_Playground 1); walls are the sample mesh | 0 |
-| 3 | Details and textures | 2 | Solid 4x4 colour textures, box props (shots-zk/Room_04_CargoBay.png) | 0 |
-| 4 | Difficulty and reinforcements | 3 | zk: every spare door feeds a squad and the three old waves arrive mid-fight (build-zk.log squad lines, decompiled cap rule); baseline 2; not played | 1 |
-| 5 | Care and appeal | 2 | Sum of 1-4; Workshop text now describes the backup honestly as unconfirmed | 0 |
+| 1 | Coherence and interest | 2 | Ten rooms still share one shell and one kind of fight; round 2 only took a stray booth out of room 1 (shots-zl = shots-zk) | 0 |
+| 2 | The Playground room | 4 | zl: no PX_Playground left (scene-lint prefab_counts, build-zl.log), so no lab booth in the street skyline; the walls are still the sample mesh (concern 3); not played | 1 |
+| 3 | Details and textures | 2 | Unchanged: solid 4x4 colour textures, box props (shots-zl/Room_04_CargoBay.png) | 0 |
+| 4 | Difficulty and reinforcements | 3 | Unchanged since zk: 13 squads, every spare door feeds one (scene-lint S15 clean on zl); not played | 1 |
+| 5 | Care and appeal | 2 | Sum of 1-4 rises a little; Workshop text now says how to set difficulty and leave without the booth; gallery unchanged | 0 |
 
 Baseline (round 1, on build zj, before any change):
 - 1 Coherence and interest: 2. All ten rooms share one shell (band, pilasters, pipe; shots-zj) and one fight: walk in, shoot the placed enemies.
@@ -26,6 +26,19 @@ Round 1 plan (concern 4, ludowright levels-and-space rules 11, 15, 21; game code
 - Fix 1 (`ReinforceWhileFighting`): caps 5, 5, 7, so those waves arrive with 2, 3 and 4 enemies still standing.
 - Fix 2 (`DoorReinforcements`): every room sends one small squad through its own spare doors (the unchained sample doors, spawning allowed; the Playground already spawns through such doors). Rooms 1-3 only once the alarm is up (`SpawnRequirement MyFactionAlerted`), so the quiet start stays quiet. Units per room (placed + all waves, zj -> zk): 2->4, 4->7, 3->6, 8->11, 4->6, 4->7, 9->12, 3->5, 5->9, 16->20. A saw-tooth with peaks at 4, 7, 10 and breathers at 5 and 8, the top beat last, no run of three high beats (rule 11). The film's raid escalates to the tower, so it wins over rule 21 (hardest early).
 - Risk (rule 15): enemies walk out of a side door in view; a player standing in a spare doorway may meet one at melee range. Unverified in play.
+
+Round 2 plan (concern 2, the Playground room; game code read with decomp.py, SceneTools proxy meshes measured with polywright pw.py inspect):
+- What the player saw: room 1 keeps the sample's `PX_Playground` proxy at the back wall (local -0.52, 0.13, 4.92, ApplyWindowMask on). In game `Converter_Proxy.ReplaceProxy(ProxyObj_Playground)` swaps it for `Library.Proxy_Playground`, the Playground control room (ghost mesh `controlroom_ghost.fbx`, 3.8 x 9 x 15 m) with its window masked through the wall, so a white lab booth shows through a hole in the street checkpoint's city skyline. No stray sample room is in the chain (ten `Room_` objects); the walls are the sample mesh (concern 3, later round); menus show the scene as `NexusProminence` under Custom Stages.
+- Is it needed to load? No. The map is loaded from the Default Chamber's terminal; `InteractiveMode` (spawn, stages, difficulty menus) lives on the booth and only runs where a booth exists; difficulty is global (`Stage_Manager.SetDifficulty`, set before loading); the pause menu's return to menu (`UI_ButtonEvents` -> `ReturnToMenu`) still leaves the map.
+- Fiction check: the film's room 1 is a street checkpoint under a red sky; a lab booth has no place there, and the tower (room 10) has its monitor wall and desk across the spot the window would cut.
+- Change: `PlaygroundControlRoom = false` drops the booth from room 1 (true restores it). Rooms are named before they are stretched, so build logs read `Room_01_...` instead of `Room_NewPlayground`. Small call, flagged: removal over a move to the tower (the tower spot is taken). Cost: no in-map spawn or stage menu; quit through pause.
+
+Round 2 of 10 (2026-11-14, build zl, concern 2 The Playground room; branch round2-playground):
+- Changed: `PlaygroundControlRoom = false` (new toggle) removes the sample's PX_Playground from room 1, so the Playground control room no longer appears through the street checkpoint's back wall. Rooms are named before `Stretch`, so build logs name them. Generator only; no camera, zoom or room size touched.
+- Evidence: decompiled game: `Converter_Proxy.ConvertToProxyObject/ReplaceProxy(ProxyObj_Playground)` (booth from `Library.Proxy_Playground`, window mask), `InteractiveMode` (menus live on the booth; Awake/Start), `Difficulty_Apply` -> `Stage_Manager.SetDifficulty` (global), `UI_ButtonEvents` -> `ReturnToMenu`. Ghost mesh `controlroom_ghost.fbx` 3.8 x 9.05 x 15.15 m (pw.py inspect). Gates: compiles; corners 0 OUT; scene-lint 0 errors (PX_Playground gone from prefab_counts; only the old S10/S12 warnings); check-mod and deploy clean; overlaps room 1: 2 clashes + 1 filler, room 3: 3 (the known ones). build-zl.log: `Room_01_StreetCheckpoint has no Playground control room`. Judge: shots-zl and shots-zk are pixel-identical (PIL difference bbox None in rooms 1, 2, 10) because the booth exists only in game, so the blind comparison is a tie by construction and there is no look to revert. Way back: lab sobj-zl/; sobj-zk/ restores the booth (or set the toggle true). Screens: lab gal-zl/ (same frames as gal-zk), repo renders/room-1-2026-11-14zl.jpg (480 px), README, description and change-notes draft updated, wiki updated.
+- Small call, flagged: removed rather than moved; the tower is the only room where a control room fits the film, and its monitor wall and desk cover the spot the window would cut.
+- Unverified in game: that room 1's back wall now shows the skyline whole; that loading from the Default Chamber and leaving by the pause menu work with no booth in the map.
+- Toolkit: madnesswright 0.1.32, scene-lint S16 warns on a PX_Playground proxy and says the map loads without it; scenetools-rules PX_Playground row corrected.
 
 Round 1 of 10 (2026-11-14, build zk, concern 4 Difficulty and reinforcements; branch round1-reinforcements):
 - Changed: `ReinforceWhileFighting` (caps of the three old waves 3/4/6 -> 5/5/7) and `DoorReinforcements` (one squad per room through its 3-4 spare doors, 29 units in all, plan above). Generator only; no box, camera, zoom or room size touched.
@@ -44,6 +57,7 @@ End test list (one line per change, filled by each round):
 - Round 1 (zk), backup through doors: in rooms 1-3 stay unseen and check no one comes; then fire a shot and count the agents walking in from the side doors (2, 3, 3). Rooms 4-10: with about half the guards down, backup walks in from the side doors (undo: `DoorReinforcements = false`, or sobj-zk vs zj).
 - Round 1 (zk), earlier waves: the cargo bay rappel team lands while 2 guards still stand, the corridor vents open with about 3 left, the tower wave starts with about 4 left (undo: `ReinforceWhileFighting = false`).
 - Round 1: stand in a spare doorway and see whether backup appears on top of you (fairness risk).
+- Round 2 (zl), no Playground room: in room 1 the back wall is the whole red city skyline with no lab booth window; set a difficulty in the Default Chamber, load the map, check it applies; leave through the pause menu (undo: `PlaygroundControlRoom = true`, or sobj-zk).
 
 Links side task: done 2026-11-14 (repo and wiki text; mpn-director#1, madnesswright#116, nexus-prominence mod-links PR; wiki Homes pushed). The live Workshop pages still carry the old text until the owner allows a page update.
 
