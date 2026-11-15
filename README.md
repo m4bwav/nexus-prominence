@@ -24,6 +24,8 @@ Each room its own place 2026-11-14 (build zn, ten rounds round 4): lighter mid-g
 
 ![Build zm (left) and zn (right), all ten rooms](renders/rooms-zm-vs-zn-2026-11-14zn.jpg)
 
+Coherence pass 2026-11-14 (build zr, ten rounds round 8): the spotlight corridor and the shutter garage are graded from the film (`FilmSeams`), so the corridor is no longer a black gap in the run. Two toggles that no longer did anything were retired. Every toggle, its round, its default and how to undo it is in [ai-docs/notes/2026-11-14-toggle-table.md](ai-docs/notes/2026-11-14-toggle-table.md). Render: renders/room-7-zq-vs-zr-2026-11-14zr.jpg.
+
 Film counts and finish 2026-11-14 (build zq, ten rounds round 7): no room holds more enemies than the film, waves included (toggle `FilmTotals`; placed + backup per room 2, 4, 3, 7, 4, 3, 5, 3, 4, 5, was up to 17 in the tower). The hall scout walks in once the alarm is up, as at 1:05 in the film. The garage console, both vending machines and the break room fridge are code-made props (`MoreModelledProps`), locker frames and bench slats read more clearly, and the office's red back window is as tall as the film's (`FilmRedFields`). The dark cone in earlier film-camera renders was SceneTools' camera-target gizmo, not part of the map; renders now hide it.
 
 ![Controls office, zp left, zq right](renders/room-3-zp-vs-zq-2026-11-14zq.jpg)
