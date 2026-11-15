@@ -4,6 +4,7 @@ Every feature the generator adds sits behind a `const bool` in [Editor/NexusProm
 
 | Toggle | Round / build | Default | What it does | How to undo |
 |---|---|---|---|---|
+| MapWalls | 9 / zs | true | the map's own wall panels where the sample wall mesh was; its collider stays, its renderer is off | false, or sobj-zr |
 | PlaygroundControlRoom | 2 / zl | false | false drops the sample's Playground booth from room 1 | true, or sobj-zk |
 | TexturedSurfaces | 3 / zm | true | tiled, outlined wall panels and floor slabs | false, or sobj-zl |
 | HeroCrate | 3 / zm | true | modelled cargo crate, same collider | false |

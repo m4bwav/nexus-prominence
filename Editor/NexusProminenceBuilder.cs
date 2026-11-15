@@ -450,6 +450,7 @@ public static class NexusProminenceBuilder
 
         f.Doors = room.GetComponentsInChildren<ProxyObj_Door>(true).Select(d => d.transform.position).ToList();
         frames[room] = f;
+        BuildMapWalls(f, room);
         Shell(f, room, index);
         switch (index)
         {
@@ -776,6 +777,80 @@ public static class NexusProminenceBuilder
             l.gameObject.isStatic = false;
         }
         Debug.Log("NexusProminence: " + room.name + " " + lamps.Count + " lamps lit");
+    }
+
+    // Round 9 (build zs): the last of the Playground sample in sight was its wall mesh (room_pg_room2_walls),
+    // the same mouldings in every room. MapWalls keeps that mesh's collider exactly as it is (room sizes,
+    // doors, camera, cover and AI unchanged), switches its renderer off (the game never re-enables room
+    // MeshRenderers: decompiled Room_Main.MakeChildrenVisible touches lights, terrain and backgrounds only)
+    // and draws the map's own panels where the collider is solid: rays every Step metres along the back and
+    // side walls find the solid cells and the door openings; cells merge into boxes in NX_Wall (tiled).
+    // false = the sample's wall mesh again.
+    const bool MapWalls = true;
+    const float MapWallStep = 0.2f, MapWallThick = 0.3f;
+    static void BuildMapWalls(Frame f, RoomObj room)
+    {
+        if (!MapWalls) return;
+        var mfs = room.GetComponentsInChildren<MeshFilter>(true).Where(m => m.name.StartsWith("room_pg_room2_walls")).ToList();
+        if (mfs.Count == 0) { Debug.LogWarning("NexusProminence: " + room.name + " has no sample wall mesh; MapWalls skipped"); return; }
+        Physics.SyncTransforms();
+        var cols = mfs.SelectMany(m => m.GetComponents<Collider>()).ToArray();
+        if (cols.Length == 0) { Debug.LogWarning("NexusProminence: " + room.name + " sample walls have no collider; MapWalls skipped"); return; }
+        float top = mfs.Max(m => m.GetComponent<Renderer>() != null ? m.GetComponent<Renderer>().bounds.max.y : f.y + 6f);
+        var parent = new GameObject("NX_MapWalls").transform;
+        parent.SetParent(f.Parent.parent, false); parent.gameObject.isStatic = true;
+        int boxes = 0;
+        // one wall: walk u along it; at each u sample heights; a solid run of cells is a box column
+        System.Action<string, float, float, System.Func<float, float, Ray>, System.Action<float, float, float, float>> wall = (label, u0, u1, ray, make) =>
+        {
+            int nu = Mathf.CeilToInt((u1 - u0) / MapWallStep), nv = Mathf.CeilToInt((top - f.y) / MapWallStep);
+            var solid = new bool[nu, nv];
+            for (int i = 0; i < nu; i++)
+                for (int j = 0; j < nv; j++)
+                {
+                    var r = ray(u0 + (i + 0.5f) * MapWallStep, f.y + (j + 0.5f) * MapWallStep); RaycastHit h;
+                    foreach (var c in cols) if (c.Raycast(r, out h, 3f)) { solid[i, j] = true; break; }
+                }
+            // vertical runs per column, then merge neighbouring columns with the same run
+            var open = new Dictionary<long, int>(); // run key -> start column
+            System.Func<int, List<long>> runs = i =>
+            {
+                var l = new List<long>(); if (i >= nu) return l;
+                for (int j = 0; j < nv; j++) if (solid[i, j]) { int a = j; while (j + 1 < nv && solid[i, j + 1]) j++; l.Add(((long)a << 16) | (long)j); }
+                return l;
+            };
+            for (int i = 0; i <= nu; i++)
+            {
+                var now = new HashSet<long>(runs(i));
+                foreach (var k in open.Keys.ToList())
+                    if (!now.Contains(k))
+                    {
+                        int a = (int)(k >> 16), b = (int)(k & 0xffff), s0 = open[k];
+                        make(u0 + s0 * MapWallStep, u0 + i * MapWallStep, f.y + a * MapWallStep, f.y + (b + 1) * MapWallStep);
+                        open.Remove(k); boxes++;
+                    }
+                foreach (var k in now) if (!open.ContainsKey(k)) open[k] = i;
+            }
+        };
+        float t = MapWallThick, zf = f.zf;
+        var src = mfs[0].GetComponent<MeshRenderer>();
+        System.Action<string, Vector3, Vector3> cube = (n, c, sz) =>
+        {
+            var g = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.DestroyImmediate(g.GetComponent<Collider>());
+            g.name = "NX_MapWall_" + n; g.transform.SetParent(parent, true); g.transform.position = c; g.transform.localScale = sz;
+            var mr = g.GetComponent<MeshRenderer>(); mr.sharedMaterial = f.M["wall"]; g.isStatic = true;
+            // judge r9: panels casting shadows threw a dark wedge the sample mesh never did; copy its shadow settings
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; if (src != null) mr.receiveShadows = src.receiveShadows; // the sample mesh is inward-facing only, so it never shadowed the room
+        };
+        // back wall: x along, rays toward +z from just inside the inner face
+        wall("back", f.x0, f.x1, (u, y) => new Ray(new Vector3(u, y, f.zb - 0.5f), Vector3.forward),
+            (a, b, y0, y1) => cube("Back", new Vector3((a + b) / 2, (y0 + y1) / 2, f.zb + t / 2), new Vector3(b - a, y1 - y0, t)));
+        wall("left", zf, f.zb, (u, y) => new Ray(new Vector3(f.x0 + 0.5f, y, u), Vector3.left),
+            (a, b, y0, y1) => cube("Left", new Vector3(f.x0 - t / 2, (y0 + y1) / 2, (a + b) / 2), new Vector3(t, y1 - y0, b - a)));
+        wall("right", zf, f.zb, (u, y) => new Ray(new Vector3(f.x1 - 0.5f, y, u), Vector3.right),
+            (a, b, y0, y1) => cube("Right", new Vector3(f.x1 + t / 2, (y0 + y1) / 2, (a + b) / 2), new Vector3(t, y1 - y0, b - a)));
+        foreach (var m in mfs) { var mr = m.GetComponent<MeshRenderer>(); if (mr != null) mr.enabled = false; }
+        Debug.Log("NexusProminence: " + room.name + " map walls " + boxes + " panels (sample wall renderer off, collider kept), top " + top.ToString("0.0"));
     }
 
     // The sample room's camera-side wall is six uneven triangulated planes (Workshop feedback). Swap its
