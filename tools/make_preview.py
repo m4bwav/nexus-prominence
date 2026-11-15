@@ -2,7 +2,8 @@
 # Run from the folder that holds shots/: python make_preview.py -> preview.jpg
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import glob, os
-import re; shots = sorted(p for p in glob.glob("shots/Room_*.png") if not re.search(r"_(BL|BR|FL|FR).png$", p))
+import re; shots = sorted(p for p in glob.glob("shots/Room_*.png") if not re.search(r"_(BL|BR|FL|FR|film).png$", p))
+assert len(shots) == 10, "expected ten room shots, found %d" % len(shots)
 names = ["STREET","WANTED HALL","CONTROLS","CARGO BAY","SNIPER LOFT","GARAGE","SPOTLIGHTS","LOCKERS","BREAK ROOM","CONTROL TOWER"]
 W=H=1024; bg=(14,12,13); red=(225,20,20)
 im=Image.new("RGB",(W,H),bg); d=ImageDraw.Draw(im)
