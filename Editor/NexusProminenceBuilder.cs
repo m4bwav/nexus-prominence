@@ -510,8 +510,9 @@ public static class NexusProminenceBuilder
         // Enemies: Nexus faction, spread across the floor right of centre (the player enters from the left).
         if (charPrefab == null) { Debug.LogWarning("NexusProminence: " + CharStart + " missing; no enemies placed."); return; }
         var folder = room.CharacterFolder != null ? room.CharacterFolder.transform : room.transform;
-        int total = spec.Foes.Sum(foe => foe.Count), n = 0;
-        foreach (var foe in spec.Foes)
+        var foes = StagedFights && index < FilmCountFoes.Length && FilmCountFoes[index] != null ? FilmCountFoes[index] : spec.Foes;
+        int total = foes.Sum(foe => foe.Count), n = 0;
+        foreach (var foe in foes)
             for (int k = 0; k < foe.Count; k++, n++)
             {
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(charPrefab, room.gameObject.scene);
@@ -526,10 +527,81 @@ public static class NexusProminenceBuilder
                 m.Alertness = spec.Alert;
                 m.SerialNumber = "NXP_" + spec.Name + "_" + n;
                 Loadout(m, foe.Type, index, n);
+                if (StagedFights) Stage(go, m, f, fb, index, n);
                 go.name = "Char_" + foe.Type + "_" + n;
                 EditorUtility.SetDirty(m);
             }
         EditorUtility.SetDirty(room);
+    }
+
+    // ---- Round 6 (build zp): every room had one fight, a loose group right of centre facing nobody in
+    // particular (concern 4, second pass). StagedFights gives each room its own fight from the film and
+    // ludowright (levels-and-space rules 8, 14, 15; one idea per room): where each enemy stands, which way it
+    // faces, its alertness, its weapon and one game behaviour. Everything is a field the game's own
+    // Marker_Character already carries (decompiled Converter_Marker / Char_DataAssigner): the marker's rotation
+    // is the spawn facing, AddBehaviors adds BehaviorList entries (Camper runs M_SniperCamp, which walks to the
+    // room's Sniper_Nodes; HoldCover, Defensive, Hunter, Runner), SpawnFromDoor makes a placed enemy walk in
+    // through a door. Counts never exceed the film table (rooms 6, 9, 10 were above it and come down);
+    // positions are fractions of the room (u across from the entry, v front to back), never nearer the
+    // entry than u 0.45 (rule 15: no enemy in melee range of the way in). Set StagedFights false for round 5.
+    const bool StagedFights = true;
+    enum Face { Entry, Exit, Back, Front }
+    struct Post
+    {
+        public float u, v; public Face face; public string held; public AlertStatus? alert; public BehaviorList[] add;
+        public Post(float u, float v, Face face, string held = null, AlertStatus? alert = null, params BehaviorList[] add)
+        { this.u = u; this.v = v; this.face = face; this.held = held; this.alert = alert; this.add = add; }
+    }
+    static readonly Foe[][] FilmCountFoes =
+    {
+        null, null, null, null, null,
+        new[] { new Foe(CharacterTypes.Nexus5_Engineer, 2), new Foe(CharacterTypes.Nexus1_Agent, 1) }, // 6: film about 3 (was 4)
+        null, null,
+        new[] { new Foe(CharacterTypes.Nexus3_Support, 1), new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus_Scientist, 1) }, // 9: film about 4 (was 5)
+        new[] { new Foe(CharacterTypes.Nexus6_Soldat, 2), new Foe(CharacterTypes.Nexus4_Riot__Guard, 1), new Foe(CharacterTypes.Nexus5_Engineer, 1) }, // 10: placed 4 (was 7); the running fight comes in by door and wave
+    };
+    const AlertStatus Calm = AlertStatus.Unaware;
+    static readonly Post[][] Posts =
+    {
+        // 1 the ambush: two rifle guards at the far barrier, backs to the way in; the player gets the first shot
+        new[] { new Post(0.78f, 0.45f, Face.Exit), new Post(0.86f, 0.62f, Face.Exit) },
+        // 2 the walk-in: three line the poster wall facing the way in; the scout (index 3) walks in through a side door
+        new[] { new Post(0.55f, 0.75f, Face.Entry), new Post(0.7f, 0.8f, Face.Entry), new Post(0.85f, 0.7f, Face.Entry), new Post(0.75f, 0.4f, Face.Entry, null, null, BehaviorList.Hunter) },
+        // 3 behind the desks: each at a desk facing the screens (back wall), then holding the desk as cover
+        new[] { new Post(0.55f, 0.42f, Face.Back, null, null, BehaviorList.HoldCover), new Post(0.8f, 0.72f, Face.Back, null, null, BehaviorList.HoldCover), new Post(0.6f, 0.62f, Face.Back) },
+        // 4 the shield wall: two riot guards in front as blockers, agents and the soldat behind on the crates
+        new[] { new Post(0.5f, 0.45f, Face.Entry, null, null, BehaviorList.Defensive), new Post(0.52f, 0.7f, Face.Entry, null, null, BehaviorList.Defensive),
+                new Post(0.7f, 0.35f, Face.Entry, null, null, BehaviorList.HoldCover), new Post(0.76f, 0.75f, Face.Entry, null, null, BehaviorList.HoldCover), new Post(0.9f, 0.55f, Face.Entry, "R_Hrifle_NFAL", null, BehaviorList.HoldCover) },
+        // 5 the sniper: one scout with the battle rifle camps the loft's sniper points, one scout rushes with the sword, two agents hold low cover
+        new[] { new Post(0.85f, 0.8f, Face.Entry, "R_Hrifle_NFAL", null, BehaviorList.Camper, BehaviorList.Sniper), new Post(0.6f, 0.5f, Face.Entry, "M_SwordNexus", null, BehaviorList.Hunter, BehaviorList.Runner),
+                new Post(0.65f, 0.32f, Face.Entry, null, null, BehaviorList.HoldCover), new Post(0.78f, 0.62f, Face.Entry, null, null, BehaviorList.HoldCover) },
+        // 6 the breather: two engineers at the console and a guard by the shutter, unaware, facing their work
+        new[] { new Post(0.6f, 0.82f, Face.Back, null, Calm), new Post(0.7f, 0.82f, Face.Back, null, Calm), new Post(0.88f, 0.5f, Face.Exit, null, Calm) },
+        // 7 the gauntlet: spread down the corridor between the cones, the riot guard blocking the middle
+        new[] { new Post(0.5f, 0.3f, Face.Entry), new Post(0.66f, 0.7f, Face.Entry, null, null, BehaviorList.Runner), new Post(0.82f, 0.35f, Face.Entry),
+                new Post(0.94f, 0.65f, Face.Entry, "M_SwordNexus", null, BehaviorList.Hunter), new Post(0.6f, 0.5f, Face.Entry, null, null, BehaviorList.Defensive) },
+        // 8 close quarters: the riot guard steps up first, two hunters behind the lockers come at you
+        new[] { new Post(0.5f, 0.5f, Face.Entry, null, null, BehaviorList.Defensive), new Post(0.72f, 0.75f, Face.Entry, "M_SwordNexus", null, BehaviorList.Hunter), new Post(0.8f, 0.35f, Face.Entry, null, null, BehaviorList.Hunter) },
+        // 9 false calm: on break at the tables, unaware, facing the counter
+        new[] { new Post(0.55f, 0.55f, Face.Back, null, Calm), new Post(0.68f, 0.4f, Face.Exit, null, Calm), new Post(0.8f, 0.6f, Face.Back, null, Calm), new Post(0.9f, 0.75f, Face.Back, null, Calm) },
+        // 10 the last stand: soldats hold the far desks under the monitor wall, the riot guard screens them
+        new[] { new Post(0.82f, 0.6f, Face.Entry, null, null, BehaviorList.HoldCover), new Post(0.9f, 0.3f, Face.Entry, null, null, BehaviorList.HoldCover),
+                new Post(0.6f, 0.45f, Face.Entry, null, null, BehaviorList.Defensive), new Post(0.72f, 0.75f, Face.Back) },
+    };
+
+    static void Stage(GameObject go, Marker_Character m, Frame f, Bounds fb, int index, int n)
+    {
+        if (index >= Posts.Length || n >= Posts[index].Length) return;
+        var p = Posts[index][n];
+        float u = Mathf.Max(0.45f, p.u);
+        go.transform.position = new Vector3(Mathf.Lerp(f.x0 + 1f, f.x1 - 1f, u), go.transform.position.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, p.v));
+        var dir = p.face == Face.Entry ? Vector3.left : p.face == Face.Exit ? Vector3.right : p.face == Face.Back ? Vector3.forward : Vector3.back;
+        go.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        if (p.alert.HasValue) m.Alertness = p.alert.Value;
+        if (p.held != null) { m.ClearDefaultWeapons = true; m.Held_R = p.held; m.Held_L = null; }
+        if (p.add != null && p.add.Length > 0) m.AddBehaviors = p.add;
+        Debug.Log("NexusProminence: NX_POST " + index + "." + n + " " + m.Character + " u " + u.ToString("0.00") + " v " + p.v.ToString("0.00") + " face " + p.face
+            + " alert " + m.Alertness + " held " + (m.Held_R ?? "-") + " add " + string.Join("+", (p.add ?? new BehaviorList[0]).Select(b => b.ToString()).ToArray()));
     }
 
     // ---- Round 4 (build zn): each room its own place and its own beat (concern 1, "boring and incoherent").
@@ -1894,6 +1966,13 @@ public static class NexusProminenceBuilder
         var m = Squad(room, f, "DoorWave", w.Delay, 2, w.Cap, Units(w.Foes),
             index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5, spare);
         if (m != null && w.OnAlarm) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
+        // Round 6: in the film (1:05) one hall agent walks in through the door mid-fight; the placed scout does that
+        if (StagedFights && index == 1)
+        {
+            var walker = room.GetComponentsInChildren<Marker_Character>(true).FirstOrDefault(c => c.SerialNumber == "NXP_" + Rooms[index].Name + "_3");
+            var door = spare[spare.Length - 1];
+            if (walker != null) { walker.SpawnFromDoor = door; EditorUtility.SetDirty(walker); Debug.Log("NexusProminence: NX_WALKIN " + walker.name + " enters by " + door.name); }
+        }
     }
 
     static List<WaveCharacter_STP> Units(params Foe[] foes)
