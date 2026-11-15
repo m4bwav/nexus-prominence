@@ -6,6 +6,8 @@ The fixed brief for [the ten-rounds continue prompt](2026-11-14-ten-rounds-conti
 
 The owner, 2026-11-14: use and improve madnesswright by improving the Nexus Prominence map, addressing the concerns below while staying true to the video; chain the work, using ludowright, polywright, artwright, the ComfyUI plugin and the other plugins, for ten rounds of improvement. The owner tests only at the end. Also: every Madness mod links the madnesswright plugin and its own repository.
 
+Owner goal (2026-11-14): by the end of the ten rounds madnesswright gets a 1.0 release, in round 10 or after the owner's end test if it depends on in-game proof.
+
 ## The criticism
 
 A comment on Workshop item 3837705778, 2026-11-13, quoted as written with the author's name left out:
