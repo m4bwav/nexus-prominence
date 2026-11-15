@@ -20,6 +20,14 @@ No Playground room 2026-11-14 (build zl, ten rounds round 2): room 1 used to kee
 
 ![Room 1 of build zl, the street checkpoint with no control room window](renders/room-1-2026-11-14zl.jpg)
 
+Drawn surfaces and a modelled crate 2026-11-14 (build zm, ten rounds round 3): walls, panels, floors and asphalt now wear tiling textures (outlined metal wall panels and floor slabs, generated with Z-Image through comfyui-gen, cropped to whole cells so they tile, tinted to the map's own colours by `tools/make_textures.py`; the full-size sources and recipe stay in the lab). UVs are set in metres (`TileMetres` 2.5) so a panel keeps one size on every box. The crate body is now a modelled crate with raised edge frames (made in code, imported as OBJ; the import came in at exactly 1.0 x 1.2 x 1.0, so OBJ in metres imports 1:1 into SceneTools). Toggles `TexturedSurfaces` and `HeroCrate`; false restores the zl look. Camera, zoom, room sizes and enemies unchanged. Not played.
+
+![Room 4 of build zm, the cargo bay with tiled floor and wall panels](renders/room-4-2026-11-14zm.jpg)
+
+Film framing: the shot renderer now has a film camera (`NexusShots.Render -filmcam -filmcams <file>`), placed per room from a hand-fitted list (low, close, level like the film) so the film-match pairs compare framing, not only the room. The editor-only view of the cargo bay from that camera:
+
+![Room 4 of build zm from the film-framing camera](renders/room-4-film-cam-2026-11-14zm.jpg)
+
 Juice 2026-11-11: shootable set pieces from the film (room 2 display glass, room 7 lamps, room 10 monitor wall) via `Breakable` and `CustomObj_Destructible`; toggle `JuiceBreakables`; details and revert in [juice-changes.md](juice-changes.md). Not played yet.
 
 ## Rooms (left to right, each door chains to the next)

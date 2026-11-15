@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -39,7 +40,53 @@ public static class NexusShots
             File.WriteAllBytes(Path.Combine(dir, room.name + ".png"), tex.EncodeToPNG());
             Debug.Log("NexusShots: " + room.name + " fog " + room.FogDensity + " ambient " + room.AmbientColor);
             if (System.Array.IndexOf(args, "-corners") >= 0) Corners(room, dir);
+            if (System.Array.IndexOf(args, "-filmcam") >= 0) FilmCam(room, dir);
         }
+    }
+
+    // Film framing (round 3): one camera per room fitted by hand to that room's film frame (the film is low and
+    // close, not the game's high three-quarter view). -filmcams <file>: lines "Room_xx u d h pitch yaw fov",
+    // u = 0..1 across the floor (left to right as the game camera sees it), d = metres out from the back wall,
+    // h = metres above the floor, pitch = degrees down, yaw = degrees right, fov = vertical degrees.
+    // Writes <room>_film.png for film_match.py. Editor-side only; the game camera is untouched.
+    static Dictionary<string, float[]> filmCams;
+    static void FilmCam(RoomObj room, string dir)
+    {
+        var cam = room.CameraPoint; if (cam == null) return;
+        if (filmCams == null)
+        {
+            filmCams = new Dictionary<string, float[]>();
+            var args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-filmcams");
+            if (i >= 0 && i + 1 < args.Length && File.Exists(args[i + 1]))
+                foreach (var line in File.ReadAllLines(args[i + 1]))
+                {
+                    var t = line.Split((char[])null, System.StringSplitOptions.RemoveEmptyEntries);
+                    if (t.Length == 7 && !t[0].StartsWith("#")) filmCams[t[0]] = t.Skip(1).Select(w => float.Parse(w, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                }
+        }
+        float[] p; if (!filmCams.TryGetValue(room.name, out p)) p = new[] { 0.5f, 7f, 1.5f, 4f, 0f, 50f };
+        Physics.SyncTransforms();
+        var floors = room.GetComponentsInChildren<Collider>().Where(c => c.gameObject.CompareTag("Floor")).ToList();
+        if (floors.Count == 0) return;
+        var fb = floors[0].bounds; foreach (var c in floors) fb.Encapsulate(c.bounds);
+        bool camAtMaxZ = cam.transform.position.z > fb.center.z;
+        float s = camAtMaxZ ? 1f : -1f, zb = camAtMaxZ ? fb.min.z : fb.max.z;
+        // seen from the camera side, "left" is -x when the camera sits at -z looking +z
+        float x = camAtMaxZ ? Mathf.Lerp(fb.max.x, fb.min.x, p[0]) : Mathf.Lerp(fb.min.x, fb.max.x, p[0]);
+        var savedPos = cam.transform.position; var savedRot = cam.transform.rotation; float savedFov = cam.fieldOfView, savedAspect = cam.aspect;
+        cam.transform.position = new Vector3(x, fb.max.y + p[2], zb + s * p[1]);
+        cam.transform.rotation = Quaternion.LookRotation(new Vector3(0, 0, -s), Vector3.up) * Quaternion.Euler(p[3], p[4], 0f);
+        cam.fieldOfView = p[5]; cam.aspect = 16f / 9f;
+        var rt = new RenderTexture(960, 540, 24);
+        bool was = cam.enabled; cam.enabled = true;
+        cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; cam.enabled = was;
+        RenderTexture.active = rt;
+        var tex = new Texture2D(960, 540, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, 960, 540), 0, 0); tex.Apply(); RenderTexture.active = null;
+        File.WriteAllBytes(Path.Combine(dir, room.name + "_film.png"), tex.EncodeToPNG());
+        Debug.Log("NexusFilmCam: " + room.name + " " + string.Join(" ", p.Select(v => v.ToString("0.##"))));
+        cam.transform.position = savedPos; cam.transform.rotation = savedRot; cam.fieldOfView = savedFov; cam.aspect = savedAspect;
     }
 
     // Reproduces Cam_Main's follow (decompile, build 25615196; zoom off, mouse centred) with the player

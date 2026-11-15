@@ -79,7 +79,7 @@ public static class NexusProminenceBuilder
     [MenuItem("Madness/Templates/Build Nexus Prominence _PG")]
     public static void Build()
     {
-        solidCount = 0;
+        solidCount = 0; tiledMats.Clear(); uvMeshes.Clear();
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(SrcScene) == null) { Debug.LogError("NexusProminence: " + SrcScene + " not found; pull SceneTools."); return; }
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(DstScene) != null &&
             !Application.isBatchMode && !EditorUtility.DisplayDialog("Nexus Prominence", DstScene + " exists. Overwrite it?", "Overwrite", "Cancel")) return;
@@ -116,6 +116,7 @@ public static class NexusProminenceBuilder
         ChainDoors(built);
         // after chaining, so the spawn-only doors are never picked as a room's way in or out
         for (int i = 0; i < built.Count; i++) Encounters(built[i], frames[built[i]], i);
+        TileUVs(built);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -266,11 +267,13 @@ public static class NexusProminenceBuilder
         if (useMad)
         {
             m.shader = mad;
-            m.mainTexture = SolidTex(name, c);
+            var tile = TexturedSurfaces ? TileTex(name) : null;
+            m.mainTexture = tile != null ? tile : SolidTex(name, c);
             m.color = Color.white;
             if (m.HasProperty("_Outline")) m.SetFloat("_Outline", 0.06f);
             if (m.HasProperty("_OutlineColor")) m.SetColor("_OutlineColor", Color.black);
             if (m.HasProperty("_TintColor")) m.SetColor("_TintColor", new Color(0, 0, 0, 0));
+            if (tile != null) tiledMats.Add(m);
             EditorUtility.SetDirty(m);
             return m;
         }
@@ -285,6 +288,66 @@ public static class NexusProminenceBuilder
     }
 
     const string MadShader = "Madness/Terrain - General";
+
+    // Round 3 (build zm): drawn tiling textures on the main surfaces (wall panels, floor slabs) instead of a
+    // solid 4x4 colour. Tiles come from tools/make_textures.py (Z-Image render, cropped to whole cells, tinted
+    // to the colours above) into MatDir/Tex; missing tiles fall back to the solid colour. Meshes get UVs in
+    // metres (TileMetres per repeat) so a tile keeps its size on every box. false = the zl look.
+    const bool TexturedSurfaces = true;
+    const float TileMetres = 2.5f;
+    static readonly Dictionary<string, string> TileFor = new Dictionary<string, string>
+        { { "NX_Wall", "tile_wall" }, { "NX_Panel", "tile_panel" }, { "NX_Floor", "tile_floor" }, { "NX_Asphalt", "tile_asphalt" } };
+    static readonly HashSet<Material> tiledMats = new HashSet<Material>();
+
+    static Texture2D TileTex(string matName)
+    {
+        string tex; if (!TileFor.TryGetValue(matName, out tex)) return null;
+        string tpath = MatDir + "/Tex/" + tex + ".png";
+        var ti = AssetImporter.GetAtPath(tpath) as TextureImporter;
+        if (ti == null) { Debug.LogWarning("NexusProminence: missing " + tpath + " (run tools/make_textures.py); solid colour used"); return null; }
+        if (ti.wrapMode != TextureWrapMode.Repeat || !ti.mipmapEnabled || ti.maxTextureSize != 512)
+        { ti.wrapMode = TextureWrapMode.Repeat; ti.mipmapEnabled = true; ti.maxTextureSize = 512; ti.SaveAndReimport(); }
+        return AssetDatabase.LoadAssetAtPath<Texture2D>(tpath);
+    }
+
+    // Box-projected UVs in metres for every renderer that wears a tiled material: each vertex takes the two
+    // axes its normal does not point along, scaled by the object's own scale, so a 2 m crate and a 20 m wall
+    // show panels of the same size. Meshes are cached per (source mesh, scale) as assets in MatDir/UV.
+    static readonly Dictionary<string, Mesh> uvMeshes = new Dictionary<string, Mesh>();
+    static void TileUVs(IEnumerable<RoomObj> rooms)
+    {
+        if (!TexturedSurfaces) return;
+        if (!AssetDatabase.IsValidFolder(MatDir + "/UV")) AssetDatabase.CreateFolder(MatDir, "UV");
+        int n = 0;
+        foreach (var room in rooms)
+            foreach (var r in room.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (r.sharedMaterial == null || !tiledMats.Contains(r.sharedMaterial)) continue;
+                var mf = r.GetComponent<MeshFilter>(); if (mf == null || mf.sharedMesh == null) continue;
+                var src = mf.sharedMesh; if (src.name.StartsWith("NX_UV_")) continue;
+                var sc = r.transform.lossyScale;
+                var q = new Vector3(Mathf.Round(sc.x * 4) / 4, Mathf.Round(sc.y * 4) / 4, Mathf.Round(sc.z * 4) / 4);
+                string key = src.name + "_" + q.x + "x" + q.y + "x" + q.z;
+                Mesh m;
+                if (!uvMeshes.TryGetValue(key, out m) || m == null)
+                {
+                    string path = MatDir + "/UV/NX_UV_" + uvMeshes.Count + ".asset";
+                    m = Object.Instantiate(src); m.name = "NX_UV_" + key;
+                    var v = src.vertices; var nrm = src.normals; var uv = new Vector2[v.Length];
+                    for (int i = 0; i < v.Length; i++)
+                    {
+                        var p = Vector3.Scale(v[i], q) / TileMetres;
+                        var a = nrm.Length > i ? nrm[i] : Vector3.up; a = new Vector3(Mathf.Abs(a.x), Mathf.Abs(a.y), Mathf.Abs(a.z));
+                        uv[i] = a.x >= a.y && a.x >= a.z ? new Vector2(p.z, p.y) : a.y >= a.z ? new Vector2(p.x, p.z) : new Vector2(p.x, p.y);
+                    }
+                    m.uv = uv;
+                    AssetDatabase.DeleteAsset(path); AssetDatabase.CreateAsset(m, path);
+                    uvMeshes[key] = m;
+                }
+                mf.sharedMesh = m; n++;
+            }
+        Debug.Log("NexusProminence: tiled UVs on " + n + " renderers, " + uvMeshes.Count + " meshes");
+    }
 
     static Texture2D SolidTex(string name, Color c)
     {
@@ -1091,10 +1154,32 @@ public static class NexusProminenceBuilder
     {
         if (f.Doors.Any(d => Mathf.Abs(d.x - x) < 1.5f + size / 2 && Mathf.Abs(d.z - z) < 1.5f + size / 2)) return;
         float cy = f.y + stackOn + size / 2;
-        Box(f, "Crate", x, cy, z, size, size, size, "panel");
+        var body = Box(f, "Crate", x, cy, z, size, size, size, "panel");
+        HeroCrateMesh(body, size, cy);
         Box(f, "CrateStrapA", x - size * 0.25f, cy, z, 0.18f, size + 0.02f, size + 0.02f, "red");
         Box(f, "CrateStrapB", x + size * 0.25f, cy, z, 0.18f, size + 0.02f, size + 0.02f, "red");
         Box(f, "CrateLid", x, cy + size / 2, z, size + 0.06f, 0.08f, size + 0.06f, "dark");
+    }
+
+    // Round 3 (build zm): the first modelled prop. A crate made in code (polywright code route; lab prop-zm,
+    // 1.0 x 1.2 x 1.0 m, base at y 0, Y up, metres) imported as OBJ into MatDir/Models swaps the crate body's
+    // cube; the collider stays the box. Logs the imported size so the import scale is proved, not assumed.
+    // false = the zl box crate.
+    const bool HeroCrate = true;
+    static Mesh heroCrate; static bool heroLogged;
+    static void HeroCrateMesh(GameObject body, float size, float cy)
+    {
+        if (!HeroCrate || body == null) return;
+        if (heroCrate == null) heroCrate = AssetDatabase.LoadAllAssetsAtPath(MatDir + "/Models/nx_crate.obj").OfType<Mesh>().FirstOrDefault();
+        if (heroCrate == null) { Debug.LogWarning("NexusProminence: " + MatDir + "/Models/nx_crate.obj missing; box crate kept"); return; }
+        var b = heroCrate.bounds;
+        if (!heroLogged) { heroLogged = true; Debug.Log("NexusProminence: hero crate imported size " + b.size.x.ToString("0.000") + " x " + b.size.y.ToString("0.000") + " x " + b.size.z.ToString("0.000") + " (file 1.000 x 1.200 x 1.000 m), min y " + b.min.y.ToString("0.000")); }
+        var col = body.GetComponent<BoxCollider>(); var cs = col != null ? col.size : Vector3.one; var cc = col != null ? col.center : Vector3.zero;
+        body.GetComponent<MeshFilter>().sharedMesh = heroCrate;
+        var t = body.transform;
+        t.localScale = new Vector3(size / b.size.x, size / b.size.y, size / b.size.z);
+        t.position = new Vector3(t.position.x, cy - size / 2 - b.min.y * t.localScale.y, t.position.z);
+        if (col != null) { col.size = new Vector3(cs.x * b.size.x, cs.y * b.size.y, cs.z * b.size.z); col.center = b.center; }
     }
 
     static void OpenCrate(Frame f, float x, float z, float s)
