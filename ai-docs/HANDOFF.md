@@ -23,7 +23,7 @@ Open questions for the owner: none yet. Askwright set: none yet.
 
 End test list (one line per change, filled by each round): empty.
 
-Links side task: not started.
+Links side task: done 2026-11-14 (repo and wiki text; mpn-director#1, madnesswright#116, nexus-prominence mod-links PR; wiki Homes pushed). The live Workshop pages still carry the old text until the owner allows a page update.
 
 State on 2026-11-12 (released zj): the owner played build-zj (mods.log 08:43, clean) and said release it. Workshop item 3837705778 updated with change-notes-2026-11-11q.txt and preview workshop-preview-2026-11-12zj.jpg (lab; repo copy 480 px): result OK. Gallery replaced with `previews --clear 7` (gal-zj rooms 1, 2, 4, 6, 7, 10 + film): result 1. Nothing waits on a play. Next: whatever the owner asks; the Workshop description still has no search-menu tags beyond `playground` (proposal stands).
 

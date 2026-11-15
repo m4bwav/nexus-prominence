@@ -13,3 +13,4 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 
 ## 2026-11-14
 - Owner asked for a chained ten-round improvement run answering a 2026-11-13 Workshop comment (boring, Playground room, poor textures, no reinforcements, unused enemy entrances), tested only at the end, plus madnesswright and repository links on every Madness mod. Wrote plans/2026-11-14-ten-rounds-continue-prompt.md and its brief; HANDOFF has the round counter, scorecard and grants. Nothing built.
+- Links side task done: Workshop description files, READMEs and wiki Homes of Nexus Prominence and Director link madnesswright and their own repos (Director no longer points at examples/SwapUnaware); madnesswright README lists both mods. No other Madness mod repo on the account. Live Workshop pages not updated (owner's call).
