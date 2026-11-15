@@ -23,6 +23,29 @@ public static class NexusShots
         if (System.Array.IndexOf(args, "-showLayout") < 0)
             foreach (var r in Object.FindObjectsOfType<Renderer>())
                 if (r.transform.parent != null && r.transform.parent.name == "Layout") r.enabled = false;
+        // SceneTools placeholder meshes (ghost_squad, ghost_weapon, ghost_character, cover and door ghosts) use the
+        // Madness/GUI shaders; the game replaces them, so a shot that shows them (an orange squad badge, a green
+        // weapon sliver) shows something no player sees. -showMarkers keeps them.
+        if (System.Array.IndexOf(args, "-showMarkers") < 0)
+            foreach (var r in Object.FindObjectsOfType<Renderer>())
+                if (r.sharedMaterial != null && r.sharedMaterial.shader != null && r.sharedMaterial.shader.name.StartsWith("Madness/GUI")) r.enabled = false;
+        // -dumpRenderers <file>: one line per distinct enabled renderer (path tail, mesh, shader, layer), to find
+        // editor-only markers that show in the shots.
+        int di = System.Array.IndexOf(args, "-dumpRenderers");
+        if (di >= 0 && di + 1 < args.Length)
+        {
+            var seen = new SortedDictionary<string, int>();
+            foreach (var r in Object.FindObjectsOfType<Renderer>())
+            {
+                if (!r.enabled || !r.gameObject.activeInHierarchy) continue;
+                var mf = r.GetComponent<MeshFilter>(); var t = r.transform;
+                string path = t.name; for (int k = 0; k < 3 && t.parent != null; k++) { t = t.parent; path = t.name + "/" + path; }
+                path = System.Text.RegularExpressions.Regex.Replace(path, "[0-9]+", "#");
+                string key = path + " | " + r.GetType().Name + " | " + (mf != null && mf.sharedMesh != null ? mf.sharedMesh.name : "-") + " | " + (r.sharedMaterial != null ? r.sharedMaterial.shader.name + ":" + r.sharedMaterial.name : "-") + " | layer " + LayerMask.LayerToName(r.gameObject.layer) + " | comps " + string.Join(",", r.GetComponents<Component>().Select(c => c == null ? "null" : c.GetType().Name).ToArray());
+                int n; seen.TryGetValue(key, out n); seen[key] = n + 1;
+            }
+            File.WriteAllLines(args[di + 1], seen.Select(kv => kv.Value + " x " + kv.Key).ToArray());
+        }
         foreach (var room in rooms)
         {
             var cam = room.CameraPoint;

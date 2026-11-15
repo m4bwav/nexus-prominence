@@ -1,0 +1,3 @@
+Page pictures only; the map is unchanged (same build as the 14 November update).
+- The cover picture now shows all ten rooms, each under its own name. Before, half its tiles repeated the first five rooms from a second camera under the wrong labels.
+- The screenshots no longer show editor placeholders (the orange squad badge and green weapon markers) that are not in the game.
