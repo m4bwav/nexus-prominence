@@ -1,5 +1,30 @@
 # Handoff
 
+## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
+
+Status: not started. Round 0 of 10 done. Last build is zj (played, on the Workshop); the next build letter is zk. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
+
+Scorecard (1 poor to 5 good; score each row with one line of evidence at the end of every round; round 1 sets the baseline before it changes anything):
+
+| # | Concern | Score | Evidence | Rounds spent |
+|---|---|---|---|---|
+| 1 | Coherence and interest | - | - | 0 |
+| 2 | The Playground room | - | - | 0 |
+| 3 | Details and textures | - | - | 0 |
+| 4 | Difficulty and reinforcements | - | - | 0 |
+| 5 | Care and appeal | - | - | 0 |
+
+Grants and limits (date, scope):
+- 2026-11-14, links: the owner asked that every Madness mod link the madnesswright plugin and its own repository. The description files, READMEs and wikis are covered outright. Reading of the session that wrote the prompt, not the owner's words: this also covers one update of each live Workshop page whose only change is the links, sent with the files and description of the release already live (zj here; the published version for Director), never with anything from an unplayed build. If the owner narrows this, write it here.
+- Starting the game: not granted. Evidence stays editor-side.
+- Unattended running (chain_loop): not agreed. It needs the owner's hours and budget first.
+
+Open questions for the owner: none yet. Askwright set: none yet.
+
+End test list (one line per change, filled by each round): empty.
+
+Links side task: not started.
+
 State on 2026-11-12 (released zj): the owner played build-zj (mods.log 08:43, clean) and said release it. Workshop item 3837705778 updated with change-notes-2026-11-11q.txt and preview workshop-preview-2026-11-12zj.jpg (lab; repo copy 480 px): result OK. Gallery replaced with `previews --clear 7` (gal-zj rooms 1, 2, 4, 6, 7, 10 + film): result 1. Nothing waits on a play. Next: whatever the owner asks; the Workshop description still has no search-menu tags beyond `playground` (proposal stands).
 
 State on 2026-11-12 (check only): mods.log still 2026-11-11 21:30, so build-zj is still unplayed; no rebuild and no upload. Next is unchanged: the owner plays zj, then upload with change-notes-2026-11-11q.txt and refresh the gallery from shots-zj.
