@@ -11,7 +11,7 @@ Scorecard (1 poor to 5 good; score each row with one line of evidence at the end
 | 1 | Coherence and interest | 2 | Ten rooms still share one shell and one kind of fight; round 2 only took a stray booth out of room 1 (shots-zl = shots-zk) | 0 |
 | 2 | The Playground room | 4 | zl: no PX_Playground left (scene-lint prefab_counts, build-zl.log), so no lab booth in the street skyline; the walls are still the sample mesh (concern 3); not played | 1 |
 | 3 | Details and textures | 2 | Unchanged: solid 4x4 colour textures, box props (shots-zl/Room_04_CargoBay.png) | 0 |
-| 4 | Difficulty and reinforcements | 3 | Unchanged since zk: 13 squads, every spare door feeds one (scene-lint S15 clean on zl); not played | 1 |
+| 4 | Difficulty and reinforcements | 3 | zl: backup only where the film shows it (rooms 2, 4, 7, 10; 7 squads), other spare doors shut, so no unused entrance is left (S15 clean); room 1 back to 2 agents; not played | 2 |
 | 5 | Care and appeal | 2 | Sum of 1-4 rises a little; Workshop text now says how to set difficulty and leave without the booth; gallery unchanged | 0 |
 
 Baseline (round 1, on build zj, before any change):
@@ -36,6 +36,7 @@ Round 2 plan (concern 2, the Playground room; game code read with decomp.py, Sce
 Round 2 of 10 (2026-11-14, build zl, concern 2 The Playground room; branch round2-playground):
 - Changed: `PlaygroundControlRoom = false` (new toggle) removes the sample's PX_Playground from room 1, so the Playground control room no longer appears through the street checkpoint's back wall. Rooms are named before `Stretch`, so build logs name them. Generator only; no camera, zoom or room size touched.
 - Evidence: decompiled game: `Converter_Proxy.ConvertToProxyObject/ReplaceProxy(ProxyObj_Playground)` (booth from `Library.Proxy_Playground`, window mask), `InteractiveMode` (menus live on the booth; Awake/Start), `Difficulty_Apply` -> `Stage_Manager.SetDifficulty` (global), `UI_ButtonEvents` -> `ReturnToMenu`. Ghost mesh `controlroom_ghost.fbx` 3.8 x 9.05 x 15.15 m (pw.py inspect). Gates: compiles; corners 0 OUT; scene-lint 0 errors (PX_Playground gone from prefab_counts; only the old S10/S12 warnings); check-mod and deploy clean; overlaps room 1: 2 clashes + 1 filler, room 3: 3 (the known ones). build-zl.log: `Room_01_StreetCheckpoint has no Playground control room`. Judge: shots-zl and shots-zk are pixel-identical (PIL difference bbox None in rooms 1, 2, 10) because the booth exists only in game, so the blind comparison is a tie by construction and there is no look to revert. Way back: lab sobj-zl/; sobj-zk/ restores the booth (or set the toggle true). Screens: lab gal-zl/ (same frames as gal-zk), repo renders/room-1-2026-11-14zl.jpg (480 px), README, description and change-notes draft updated, wiki updated.
+- Owner, mid-round (2026-11-14): "Don't betray the movie: the first room is only 2 enemies" and "try to re-create shots from the movie". `FilmTrueArrivals` keeps round 1's door waves only in rooms 2, 4, 7 and 10, where the film shows enemies walking in; rooms 1, 3, 5, 6, 8, 9 shut their spare doors (DisableSpawn; build-zl.log: 4+3+3+3+3+3 doors shut). Room 1 is exactly 2 agents. scene-lint: 7 Squad_Spawner (13 in zk), S15 0 unused doors. Film table below and in the brief. Film shots: lab `film_match.py`, sheets film-match-zl/ and film-match-zk/ (film frame | map render per room); the map camera is the game's high three-quarter view while the film is low and side-on, so the pairs match room and set, not framing.
 - Small call, flagged: removed rather than moved; the tower is the only room where a control room fits the film, and its monitor wall and desk cover the spot the window would cut.
 - Unverified in game: that room 1's back wall now shows the skyline whole; that loading from the Default Chamber and leaving by the pause menu work with no booth in the map.
 - Toolkit: madnesswright 0.1.32, scene-lint S16 warns on a PX_Playground proxy and says the map loads without it; scenetools-rules PX_Playground row corrected.
@@ -51,6 +52,21 @@ Grants and limits (date, scope):
 - Starting the game: not granted. Evidence stays editor-side.
 - Unattended running (chain_loop): not agreed. It needs the owner's hours and budget first.
 
+Film count per room (standing table; owner 2026-11-14: "Don't betray the movie: the first room is only 2 enemies"). Read from the film at one frame per 5 s (lab `film-frames/sheet5s_*.jpg`), so counts are approximate except room 1; the film often cuts between short fights, mapped here to the README rooms. "Walk in" means enemies are seen entering through a door mid-fight. A round may not push a room past this table; where the film shows no one walking in, the spare doors stay shut (`DisableSpawn`).
+
+| Room | Film (time) | Enemies in the film | Arrival in the film | Map zl (placed + backup) |
+|---|---|---|---|---|
+| 1 Street checkpoint | 0:20-0:35 | 2 | standing at the checkpoint, no backup | 2 + 0 |
+| 2 Wanted hall | 0:50-2:00 | about 4-5 | one walks in through the hall door (1:05) | 4 + 3 door |
+| 3 Controls office | 2:30-3:15 | about 4-5 | already in the office | 3 + 0 |
+| 4 Cargo bay | 4:05-5:45 | about 7 or more | more keep coming through the doors (5:35) | 5 + 3 door + 3 rappel |
+| 5 Sniper loft | 8:40-9:35 | about 4-5 | placed, shooting from cover | 4 + 0 |
+| 6 Shutter garage | 6:00-6:35 | about 3 | placed | 4 + 0 |
+| 7 Spotlight corridor | 6:40-7:25 | about 4-5 | they step out of the side doors (7:00-7:25) | 5 + 3 door + 4 vent |
+| 8 Locker room | 8:00-8:35 | about 4-5 | placed | 3 + 0 |
+| 9 Break room | 9:40-10:30 | about 4 | placed | 5 + 0 |
+| 10 Control tower | 10:35-10:50 | about 3 on screen, end of a running fight | the fight carries in | 7 + 4 door + 9 wave |
+
 Open questions for the owner: none yet. Askwright set: none yet.
 
 End test list (one line per change, filled by each round):
@@ -58,6 +74,7 @@ End test list (one line per change, filled by each round):
 - Round 1 (zk), earlier waves: the cargo bay rappel team lands while 2 guards still stand, the corridor vents open with about 3 left, the tower wave starts with about 4 left (undo: `ReinforceWhileFighting = false`).
 - Round 1: stand in a spare doorway and see whether backup appears on top of you (fairness risk).
 - Round 2 (zl), no Playground room: in room 1 the back wall is the whole red city skyline with no lab booth window; set a difficulty in the Default Chamber, load the map, check it applies; leave through the pause menu (undo: `PlaygroundControlRoom = true`, or sobj-zk).
+- Round 2 (zl), film-true arrivals: room 1 has exactly 2 agents and no one comes even after a shot; rooms 3, 5, 6, 8, 9 get no backup; rooms 2, 4, 7, 10 still do (undo: `FilmTrueArrivals = false`).
 
 Links side task: done 2026-11-14 (repo and wiki text; mpn-director#1, madnesswright#116, nexus-prominence mod-links PR; wiki Homes pushed). The live Workshop pages still carry the old text until the owner allows a page update.
 

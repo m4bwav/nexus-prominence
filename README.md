@@ -61,3 +61,7 @@ Player start stays in room 1; the Playground control room is left out (toggle `P
 ## Tweak
 
 Rooms, cover and enemies are the `Rooms` table at the top of the generator; edit and re-run (it asks before overwriting).
+
+Truer to the film 2026-11-14 (build zl, round 2, the requester's rule "don't betray the movie: the first room is only 2 enemies"): toggle `FilmTrueArrivals` keeps round 1's door backup only in the rooms where the film shows enemies walking in mid-fight (2 wanted hall, 4 cargo bay, 7 spotlight corridor, 10 control tower); the other rooms shut their spare doors (`DisableSpawn`), so the street checkpoint holds exactly its 2 agents. The film count per room is a standing table in ai-docs/plans/2026-11-14-ten-rounds-brief.md. Every round now pairs a film frame with the map render per room (lab script, reference only; no film art goes into the map). Small comparison, film frame left and the editor render of room 1 right: renders/film-vs-map-room-1-2026-11-14zl.jpg. Not played.
+
+![Film frame of the street checkpoint beside the room 1 render of build zl](renders/film-vs-map-room-1-2026-11-14zl.jpg)

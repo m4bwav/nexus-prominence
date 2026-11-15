@@ -34,6 +34,21 @@ Earlier comment review, with faults already fixed and a few left open: [notes/20
 
 The film is the fan collab NEXUS: HANK RAID, https://www.youtube.com/watch?v=v0suvMY3GgM. The room table in the README was taken from its frames. Contact sheets and owner-sent frames are in the lab's `frames/` folder; there are few, so pull more with cinewright-analyze when a round needs a closer look at a room, and keep them in the lab. True to the video means: the route and order of rooms, what each room is and holds, the gray-and-red look, who the enemies are and how they arrive, and the pace of the raid. It does not mean copying the film's drawings. Where the film and a fix pull apart, the film wins and the fix is reshaped; where the film is silent, the game's own style decides.
 
+Film count per room (standing table; owner 2026-11-14: "Don't betray the movie: the first room is only 2 enemies"). Read from the film at one frame per 5 s (lab `film-frames/sheet5s_*.jpg`), so counts are approximate except room 1; the film often cuts between short fights, mapped here to the README rooms. "Walk in" means enemies are seen entering through a door mid-fight. A round may not push a room past this table; where the film shows no one walking in, the spare doors stay shut (`DisableSpawn`).
+
+| Room | Film (time) | Enemies in the film | Arrival in the film | Map zl (placed + backup) |
+|---|---|---|---|---|
+| 1 Street checkpoint | 0:20-0:35 | 2 | standing at the checkpoint, no backup | 2 + 0 |
+| 2 Wanted hall | 0:50-2:00 | about 4-5 | one walks in through the hall door (1:05) | 4 + 3 door |
+| 3 Controls office | 2:30-3:15 | about 4-5 | already in the office | 3 + 0 |
+| 4 Cargo bay | 4:05-5:45 | about 7 or more | more keep coming through the doors (5:35) | 5 + 3 door + 3 rappel |
+| 5 Sniper loft | 8:40-9:35 | about 4-5 | placed, shooting from cover | 4 + 0 |
+| 6 Shutter garage | 6:00-6:35 | about 3 | placed | 4 + 0 |
+| 7 Spotlight corridor | 6:40-7:25 | about 4-5 | they step out of the side doors (7:00-7:25) | 5 + 3 door + 4 vent |
+| 8 Locker room | 8:00-8:35 | about 4-5 | placed | 3 + 0 |
+| 9 Break room | 9:40-10:30 | about 4 | placed | 5 + 0 |
+| 10 Control tower | 10:35-10:50 | about 3 on screen, end of a running fight | the fight carries in | 7 + 4 door + 9 wave |
+
 ## Which plugin helps where
 
 | Need | Plugin or skill |

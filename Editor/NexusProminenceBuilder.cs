@@ -1651,6 +1651,12 @@ public static class NexusProminenceBuilder
     // 7 and 10, a breather in 5 and 8). The three quiet rooms send theirs only once the alarm is up
     // (SpawnRequirement MyFactionAlerted), so a quiet start stays quiet. Set DoorReinforcements false to build without.
     const bool DoorReinforcements = true;
+    // Round 2 (build zl), owner 2026-11-14: "Don't betray the movie: the first room is only 2 enemies." Door waves
+    // stay only in the rooms where the film shows enemies walking in during the fight (wanted hall, cargo bay,
+    // spotlight corridor, control tower; film table in ai-docs/HANDOFF.md). Elsewhere the spare doors are shut
+    // (DisableSpawn) so room 1 holds exactly its 2 agents. False restores round 1's door wave in every room.
+    const bool FilmTrueArrivals = true;
+    static readonly bool[] FilmDoorWaves = { false, true, false, true, false, false, true, false, false, true };
     struct DoorWave { public float Delay; public bool OnAlarm; public int Cap; public Foe[] Foes; }
     static readonly DoorWave[] DoorWavePlan =
     {
@@ -1669,6 +1675,13 @@ public static class NexusProminenceBuilder
     static void DoorWaves(RoomObj room, Frame f, int index, ProxyObj_Door[] spare)
     {
         if (!DoorReinforcements || index >= DoorWavePlan.Length) return;
+        if (FilmTrueArrivals && !FilmDoorWaves[index])
+        {
+            // the film shows no one walking in here: keep the spare doors shut instead of inventing a squad
+            foreach (var d in spare) { d.DisableSpawn = true; EditorUtility.SetDirty(d); }
+            Debug.Log("NexusProminence: " + room.name + " no door wave (film shows none); " + spare.Length + " spare doors shut");
+            return;
+        }
         if (spare.Length == 0) { Debug.LogWarning("NexusProminence: " + room.name + " has no spare door for its door wave"); return; }
         var w = DoorWavePlan[index];
         foreach (var d in spare) { d.SerialNumber = "NXP_" + room.name + "_door_" + System.Array.IndexOf(spare, d); EditorUtility.SetDirty(d); }
