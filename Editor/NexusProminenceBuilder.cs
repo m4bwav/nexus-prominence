@@ -1592,10 +1592,14 @@ public static class NexusProminenceBuilder
     static void Encounters(RoomObj room, Frame f, int index)
     {
         if (!JuiceEncounters) return;
+        // the sample room's spare doors (not chained, spawning allowed), taken before any spawn door is added
+        var spare = room.GetComponentsInChildren<ProxyObj_Door>(true)
+            .Where(d => d.LinkedDoor == null && string.IsNullOrEmpty(d.LinkedScene) && !d.DisableSpawn && !d.gameObject.name.StartsWith("PX_Spawn_")).ToArray();
+        DoorWaves(room, f, index, spare);
         switch (index)
         {
             case 3: // cargo bay: a rappel team drops in once the fight has started
-                Squad(room, f, "CargoRappel", 14f, 3, 3, Units(new Foe(CharacterTypes.Nexus1_Agent, 3)),
+                Squad(room, f, "CargoRappel", 14f, 3, Cap(3, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 3)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T5, SpawnDoor(room, f, "Rappel_A", ProxyObj_Door.ProxyType.Rapel, 0.45f, 0.55f));
                 break;
             case 5: // shutter garage: two spike strips across the floor, out of step with each other
@@ -1603,14 +1607,14 @@ public static class NexusProminenceBuilder
                 Spikes(room, f, "B", 0.66f, 0.5f, 120f);
                 break;
             case 6: // spotlight corridor: agents crawl out of the wall vents; one spike strip mid-corridor
-                Squad(room, f, "CorridorVents", 10f, 2, 4, Units(new Foe(CharacterTypes.Nexus1_Agent, 4)),
+                Squad(room, f, "CorridorVents", 10f, 2, Cap(4, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 4)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T5,
                     SpawnDoor(room, f, "Vent_A", ProxyObj_Door.ProxyType.VentSide, 0.4f, 0.97f),
                     SpawnDoor(room, f, "Vent_B", ProxyObj_Door.ProxyType.VentSide, 0.75f, 0.97f));
                 Spikes(room, f, "A", 0.55f, 0.3f, 0f);
                 break;
             case 9: // control tower: reinforcement waves by vent and rappel line, riot guards and soldats last
-                Squad(room, f, "TowerReinforcements", 12f, 3, 6,
+                Squad(room, f, "TowerReinforcements", 12f, 3, Cap(6, 7),
                     Units(new Foe(CharacterTypes.Nexus1_Agent, 5), new Foe(CharacterTypes.Nexus4_Riot__Guard, 2), new Foe(CharacterTypes.Nexus6_Soldat, 2)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged,
                     SpawnDoor(room, f, "Vent_A", ProxyObj_Door.ProxyType.VentSide, 0.3f, 0.97f),
@@ -1618,6 +1622,45 @@ public static class NexusProminenceBuilder
                     SpawnDoor(room, f, "Rappel_B", ProxyObj_Door.ProxyType.Rapel, 0.75f, 0.4f));
                 break;
         }
+    }
+
+    // Round 1 (build zk). The game lets a wave squad in only while the room's living enemies of that faction plus
+    // the next squad stay at or under the wave's MaxUnitCount (Wave_Tandem.CanSpawnWithoutBreachingMax). With the
+    // old caps the cargo bay rappel team (cap 3, squad 3, five placed enemies) could only come once the room was
+    // empty, and the vents and tower waves late. ReinforceWhileFighting raises the caps so they arrive mid-fight;
+    // false restores the zj caps.
+    const bool ReinforceWhileFighting = true;
+    static int Cap(int zj, int zk) { return ReinforceWhileFighting ? zk : zj; }
+
+    // Round 1 (build zk): every spare door of the sample room was a framed doorway nothing came through. DoorWaves
+    // sends a small reinforcement squad through them in every room, sized to a saw-tooth curve (peaks at rooms 4,
+    // 7 and 10, a breather in 5 and 8). The three quiet rooms send theirs only once the alarm is up
+    // (SpawnRequirement MyFactionAlerted), so a quiet start stays quiet. Set DoorReinforcements false to build without.
+    const bool DoorReinforcements = true;
+    struct DoorWave { public float Delay; public bool OnAlarm; public int Cap; public Foe[] Foes; }
+    static readonly DoorWave[] DoorWavePlan =
+    {
+        new DoorWave { Delay = 4f, OnAlarm = true, Cap = 3, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2) } },
+        new DoorWave { Delay = 4f, OnAlarm = true, Cap = 4, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus2_Scout, 1) } },
+        new DoorWave { Delay = 5f, OnAlarm = true, Cap = 4, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus3_Support, 1) } },
+        new DoorWave { Delay = 20f, Cap = 5, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus4_Riot__Guard, 1) } },
+        new DoorWave { Delay = 10f, Cap = 4, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2) } },
+        new DoorWave { Delay = 10f, Cap = 4, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus5_Engineer, 1) } },
+        new DoorWave { Delay = 18f, Cap = 5, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus4_Riot__Guard, 1) } },
+        new DoorWave { Delay = 10f, Cap = 3, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2) } },
+        new DoorWave { Delay = 8f, Cap = 5, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 3), new Foe(CharacterTypes.Nexus3_Support, 1) } },
+        new DoorWave { Delay = 20f, Cap = 6, Foes = new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus6_Soldat, 2) } },
+    };
+
+    static void DoorWaves(RoomObj room, Frame f, int index, ProxyObj_Door[] spare)
+    {
+        if (!DoorReinforcements || index >= DoorWavePlan.Length) return;
+        if (spare.Length == 0) { Debug.LogWarning("NexusProminence: " + room.name + " has no spare door for its door wave"); return; }
+        var w = DoorWavePlan[index];
+        foreach (var d in spare) { d.SerialNumber = "NXP_" + room.name + "_door_" + System.Array.IndexOf(spare, d); EditorUtility.SetDirty(d); }
+        var m = Squad(room, f, "DoorWave", w.Delay, 2, w.Cap, Units(w.Foes),
+            index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5, spare);
+        if (m != null && w.OnAlarm) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
     }
 
     static List<WaveCharacter_STP> Units(params Foe[] foes)
@@ -1669,11 +1712,11 @@ public static class NexusProminenceBuilder
         return d;
     }
 
-    static void Squad(RoomObj room, Frame f, string name, float delay, int squadSize, int maxOnScreen,
+    static Marker_Squad Squad(RoomObj room, Frame f, string name, float delay, int squadSize, int maxOnScreen,
         List<WaveCharacter_STP> units, WeaponLoadout_STP.LoadoutPools guns, params ProxyObj_Door[] doors)
     {
         var src = AssetDatabase.LoadAssetAtPath<GameObject>(SquadPrefab);
-        if (src == null) { Debug.LogWarning("NexusProminence: " + SquadPrefab + " missing; no " + name); return; }
+        if (src == null) { Debug.LogWarning("NexusProminence: " + SquadPrefab + " missing; no " + name); return null; }
         var go = (GameObject)PrefabUtility.InstantiatePrefab(src, room.gameObject.scene);
         go.transform.SetParent(room.CharacterFolder != null ? room.CharacterFolder.transform : room.transform, false);
         go.transform.position = new Vector3(f.Cx, f.y, f.Cz); // position does not matter for a squad spawner
@@ -1689,7 +1732,8 @@ public static class NexusProminenceBuilder
         m.Wave = new WaveSpawn_STP { MaxSquadSize = squadSize, MaxUnitCount = maxOnScreen, WaveUnits = units,
             WeaponStock = new List<WeaponLoadout_STP> { new WeaponLoadout_STP { MadCard = "NONE", Loadout = guns, Count = units.Sum(x => x.Total) } } };
         EditorUtility.SetDirty(m);
-        Debug.Log("NexusProminence: " + room.name + " squad " + name + " (" + units.Sum(x => x.Total) + " units, " + m.SpawnFromDoors.Count + " doors, after " + delay + " s)");
+        Debug.Log("NexusProminence: " + room.name + " squad " + name + " (" + units.Sum(x => x.Total) + " units, " + m.SpawnFromDoors.Count + " doors, after " + delay + " s, cap " + maxOnScreen + ")");
+        return m;
     }
 
     // Spike strip that rises and drops on a timer (automator times are frames, 60 per second).

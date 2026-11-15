@@ -1,0 +1,3 @@
+Draft change notes for the next update (ten improvement rounds; nothing here is uploaded until the owner has played it)
+
+- Reinforcements: backup now walks in through the side doors of every room once you thin the guards out (the first three rooms only after the alarm). The cargo bay rappel team, the corridor vent agents and the control tower wave now arrive mid-fight instead of after the room is empty.
