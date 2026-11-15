@@ -233,9 +233,9 @@ public static class NexusProminenceBuilder
         if (!AssetDatabase.IsValidFolder(MatDir)) AssetDatabase.CreateFolder("Assets/Templates", "NexusProminence");
         var d = new Dictionary<string, Material>
         {
-            { "wall", Mat("NX_Wall", new Color(0.25f, 0.20f, 0.21f), Color.black) },
-            { "floor", Mat("NX_Floor", new Color(0.34f, 0.29f, 0.30f), Color.black) },
-            { "panel", Mat("NX_Panel", new Color(0.31f, 0.26f, 0.27f), Color.black) },
+            { "wall", Mat("NX_Wall", LighterWalls ? new Color(0.40f, 0.35f, 0.36f) : new Color(0.25f, 0.20f, 0.21f), Color.black) },
+            { "floor", Mat("NX_Floor", LighterWalls ? new Color(0.52f, 0.47f, 0.48f) : new Color(0.34f, 0.29f, 0.30f), Color.black) },
+            { "panel", Mat("NX_Panel", LighterWalls ? new Color(0.46f, 0.41f, 0.42f) : new Color(0.31f, 0.26f, 0.27f), Color.black) },
             { "red", Mat("NX_RedStripe", new Color(0.85f, 0.04f, 0.04f), new Color(0.55f, 0f, 0f)) },
             { "maroon", Mat("NX_Maroon", new Color(0.50f, 0.03f, 0.05f), new Color(0.30f, 0f, 0.02f)) },
             { "rubble", Mat("NX_Rubble", new Color(0.40f, 0.37f, 0.37f), Color.black) },
@@ -302,6 +302,7 @@ public static class NexusProminenceBuilder
     static Texture2D TileTex(string matName)
     {
         string tex; if (!TileFor.TryGetValue(matName, out tex)) return null;
+        if (LighterWalls) tex += "_light";
         string tpath = MatDir + "/Tex/" + tex + ".png";
         var ti = AssetImporter.GetAtPath(tpath) as TextureImporter;
         if (ti == null) { Debug.LogWarning("NexusProminence: missing " + tpath + " (run tools/make_textures.py); solid colour used"); return null; }
@@ -467,8 +468,10 @@ public static class NexusProminenceBuilder
             case 8: BreakRoom(f); break;
             case 9: ControlTower(f); break;
         }
+        Identity(f, room, index);
         ClearWallOverlaps(f, room);
         LightTheLamps(room, f);
+        IdentityLights(room, index);
         BoxFourthWall(room);
         Physics.SyncTransforms();
         CollectWallBusy(f, room);
@@ -526,6 +529,73 @@ public static class NexusProminenceBuilder
                 EditorUtility.SetDirty(m);
             }
         EditorUtility.SetDirty(room);
+    }
+
+    // ---- Round 4 (build zn): each room its own place and its own beat (concern 1, "boring and incoherent").
+    // From the film frames (film-match-zm_film) and ludowright's one idea per room: the light level rises and
+    // falls along the raid (calm entry, red alarm, bright office, floodlit siege, dark loft, breather, dark
+    // gauntlet, red close quarters, false calm, bright finale), each room gets one landmark the film supports,
+    // and the door the player comes in by carries a lit header (way in, left) and the way on a red one (right).
+    // Landmarks are thin wall or high pieces (no colliders; Solidify skips them), so cover and fights stay as
+    // they were. RoomIdentity false = the zm rooms. LighterWalls: the film's walls are mid gray, ours were
+    // charcoal and hid the round 3 panels; false = the zm values (tiles *_light come from make_textures.py).
+    const bool RoomIdentity = true;
+    const bool LighterWalls = true;
+    // ambient r,g,b and lamp colour r,g,b per room; a negative lamp red keeps the room's own lamp colour
+    static readonly float[,] IdentityLight = {
+        { 0.30f, 0.29f, 0.29f, 1f, 0.90f, 0.88f },   // 1 street: calm entry, neutral gray under the red sky (judge r4)
+        { 0.55f, 0.16f, 0.16f, -1f, 0f, 0f },        // 2 wanted hall: the alarm (its own deep red grade)
+        { 0.38f, 0.35f, 0.35f, 1f, 0.92f, 0.90f },   // 3 office: plain white office light after the red hall
+        { 0.42f, 0.36f, 0.36f, 1f, 0.85f, 0.80f },   // 4 cargo bay: floodlit siege
+        { 0.22f, 0.21f, 0.21f, 1f, 0.85f, 0.83f },   // 5 sniper loft: dim gray below, light on the ledge (judge r4)
+        { 0.33f, 0.30f, 0.30f, 1f, 0.88f, 0.86f },   // 6 garage: the breather
+        { 0.17f, 0.13f, 0.14f, -1f, 0f, 0f },        // 7 corridor: dark gauntlet, only the spot cones
+        { 0.30f, 0.27f, 0.27f, 1f, 0.60f, 0.58f },   // 8 locker room: gray, lamps warm red from above (film 8:15; judge r4)
+        { 0.34f, 0.29f, 0.28f, 1f, 0.78f, 0.70f },   // 9 break room: false calm
+        { 0.48f, 0.24f, 0.24f, 1f, 0.50f, 0.48f } }; // 10 tower: bright red finale
+
+    static void IdentityLights(RoomObj room, int index)
+    {
+        if (!RoomIdentity || index >= IdentityLight.GetLength(0)) return;
+        room.AmbientColor = new Color(IdentityLight[index, 0], IdentityLight[index, 1], IdentityLight[index, 2]);
+        if (IdentityLight[index, 3] >= 0f)
+            foreach (var l in room.GetComponentsInChildren<Light>(true)) l.color = new Color(IdentityLight[index, 3], IdentityLight[index, 4], IdentityLight[index, 5]);
+        Debug.Log("NexusProminence: " + room.name + " identity ambient " + room.AmbientColor);
+    }
+
+    static void Identity(Frame f, RoomObj room, int index)
+    {
+        if (!RoomIdentity) return;
+        if (f.Doors.Count > 0)
+        {
+            var din = f.Doors.OrderBy(d => d.x).First(); var dout = f.Doors.OrderBy(d => d.x).Last();
+            Box(f, "EntryHeader", din.x, f.y + 4.9f, din.z > f.zb - 1f ? f.zb - 0.12f : din.z, 2.2f, 0.18f, 0.12f, "lit");
+            if (dout != din) Box(f, "ExitHeader", dout.x, f.y + 4.9f, dout.z > f.zb - 1f ? f.zb - 0.12f : dout.z, 2.2f, 0.18f, 0.12f, "screen");
+        }
+        switch (index)
+        {
+            case 0: // checkpoint boom barrier folded against the back wall, red and white
+                Box(f, "BoomPost", f.x0 + 2.2f, f.y + 0.7f, f.zb - 0.5f, 0.3f, 1.4f, 0.3f, "dark");
+                for (int k = 0; k < 6; k++) Box(f, "BoomArm", f.x0 + 2.6f + k * 0.5f, f.y + 1.2f, f.zb - 0.5f, 0.5f, 0.16f, 0.12f, k % 2 == 0 ? "red" : "white");
+                break;
+            case 1: // alarm beacons high on the back wall
+                foreach (var t0 in new[] { 0.3f, 0.7f }) { float t = t0; for (int g = 0; g < 12 && f.Doors.Any(d => Mathf.Abs(d.x - (f.x0 + t * f.W)) < 2.6f); g++) t += t0 < 0.5f ? -0.03f : 0.03f; Box(f, "AlarmBase", f.x0 + t * f.W, f.y + 5.7f, f.zb - 0.15f, 0.5f, 0.2f, 0.3f, "dark"); Cyl(f, "AlarmBeacon", f.x0 + t * f.W, f.y + 6.0f, f.zb - 0.15f, 0.35f, 0.4f, "screen"); }
+                break;
+            case 3: // hazard posts either side of the loading door
+                foreach (var dx in new[] { -1.8f, 1.8f }) for (int k = 0; k < 6; k++) Box(f, "HazardPost", f.x1 - 3f + dx, f.y + 0.4f + k * 0.8f, f.zb - 0.1f, 0.4f, 0.8f, 0.06f, k % 2 == 0 ? "red" : "dark");
+                break;
+            case 4: // light strip under the ledge: the high ground is the bright place
+                Box(f, "LedgeGlow", (f.Cx - 2f + f.x1 - 1f) / 2, f.y + 3.2f, f.zb - 1.0f, f.x1 - 1f - (f.Cx - 2f) - 0.4f, 0.08f, 0.6f, "lit");
+                break;
+            case 5: // parking bay lines on the garage floor
+                for (int k = 0; k < 4; k++) Box(f, "BayLine", f.x0 + 4f + k * 4f, f.y + 0.012f, f.zb - 3f, 0.15f, 0.02f, 3.5f, "white");
+                break;
+            case 8: // a lit arrow on the back wall pointing the way on (the film's break room has an arrow sign)
+                Box(f, "ArrowShaft", f.x0 + 9f, f.y + 3.3f, f.zb - 0.1f, 1.6f, 0.25f, 0.06f, "screen");
+                Box(f, "ArrowHeadA", f.x0 + 9.85f, f.y + 3.47f, f.zb - 0.1f, 0.6f, 0.22f, 0.06f, "screen").transform.rotation = Quaternion.Euler(0, 0, -40f);
+                Box(f, "ArrowHeadB", f.x0 + 9.85f, f.y + 3.13f, f.zb - 0.1f, 0.6f, 0.22f, 0.06f, "screen").transform.rotation = Quaternion.Euler(0, 0, 40f);
+                break;
+        }
     }
 
     // Every visible lamp must light (Workshop feedback: "lights that dont light"). The game allows 4 lights

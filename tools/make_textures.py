@@ -25,6 +25,11 @@ TILES = {
     "tile_panel": ("wall_raw.png", (340, 340, 1016, 1016), (0.31, 0.26, 0.27), 0.9),
     "tile_floor": ("floor_raw.png", (339, 267, 1022, 767), (0.34, 0.29, 0.30), 1.3),
     "tile_asphalt": ("floor_raw.png", (339, 267, 1022, 767), (0.22, 0.21, 0.22), 1.0),
+    # round 4 (LighterWalls): the film's mid-gray walls and light floor
+    "tile_wall_light": ("wall_raw.png", (340, 340, 1016, 1016), (0.40, 0.35, 0.36), 0.9),
+    "tile_panel_light": ("wall_raw.png", (340, 340, 1016, 1016), (0.46, 0.41, 0.42), 0.9),
+    "tile_floor_light": ("floor_raw.png", (339, 267, 1022, 767), (0.52, 0.47, 0.48), 1.3),
+    "tile_asphalt_light": ("floor_raw.png", (339, 267, 1022, 767), (0.30, 0.29, 0.30), 1.0),
 }
 
 
