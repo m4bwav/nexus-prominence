@@ -22,3 +22,7 @@ Use: enable the mod from the gear icon, open the Playground terminal and load Ne
 
 Early test build: tell us about doors that don't connect, rooms you can't clear or walls in odd places.
 Planned, not confirmed in play yet: reinforcement squads from a vent and rappel lines in the control tower and cargo bay, and timed spike strips in the shutter garage and spotlight corridor. If you see them work (or not), say so in the comments.
+
+Source, build steps and issues: https://github.com/m4bwav/nexus-prominence
+
+Made with madnesswright, a free, open-source toolkit for modding MADNESS: Project Nexus: https://github.com/m4bwav/madnesswright
