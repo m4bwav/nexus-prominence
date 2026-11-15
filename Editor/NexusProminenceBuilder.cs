@@ -511,6 +511,7 @@ public static class NexusProminenceBuilder
         if (charPrefab == null) { Debug.LogWarning("NexusProminence: " + CharStart + " missing; no enemies placed."); return; }
         var folder = room.CharacterFolder != null ? room.CharacterFolder.transform : room.transform;
         var foes = StagedFights && index < FilmCountFoes.Length && FilmCountFoes[index] != null ? FilmCountFoes[index] : spec.Foes;
+        if (FilmTotals && FilmTotalFoes[index] != null) foes = FilmTotalFoes[index];
         int total = foes.Sum(foe => foe.Count), n = 0;
         foreach (var foe in foes)
             for (int k = 0; k < foe.Count; k++, n++)
@@ -560,6 +561,35 @@ public static class NexusProminenceBuilder
         new[] { new Foe(CharacterTypes.Nexus3_Support, 1), new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus_Scientist, 1) }, // 9: film about 4 (was 5)
         new[] { new Foe(CharacterTypes.Nexus6_Soldat, 2), new Foe(CharacterTypes.Nexus4_Riot__Guard, 1), new Foe(CharacterTypes.Nexus5_Engineer, 1) }, // 10: placed 4 (was 7); the running fight comes in by door and wave
     };
+    // Round 7 (build zq), owner rule "don't betray the movie": rooms 2, 4, 7 and 10 had more enemies placed plus
+    // backup than the film shows (zp totals 7, 11, 12, 17 against the film's about 4-5, 7, 4-5 and 5; film table in
+    // ai-docs/HANDOFF.md, tower re-read at 10:35-10:50: three dead on the floor and two standing). FilmTotals brings
+    // each total (placed + every wave) inside the film: room 2 places three and its scout walks in mid-fight as a
+    // one-man door squad on the alarm (film 1:05) instead of a placed SpawnFromDoor marker; room 4 keeps its door
+    // wave (two agents) and drops the rappel team; room 7 places two agents and the riot guard, two agents step out
+    // of the side doors, no vents; room 10 places four and one soldat follows through the door, no tower wave.
+    // false = the zp counts.
+    const bool FilmTotals = true;
+    static readonly Foe[][] FilmTotalFoes =
+    {
+        null,
+        new[] { new Foe(CharacterTypes.Nexus1_Agent, 3) },                                                   // 2: 3 placed + 1 walk-in = 4
+        null, null, null, null,
+        new[] { new Foe(CharacterTypes.Nexus1_Agent, 2), new Foe(CharacterTypes.Nexus4_Riot__Guard, 1) },   // 7: 3 placed + 2 door = 5
+        null, null, null,
+    };
+    static readonly Post[][] FilmTotalPosts =
+    {
+        null, null, null, null, null, null,
+        new[] { new Post(0.5f, 0.3f, Face.Entry), new Post(0.82f, 0.35f, Face.Entry, null, null, BehaviorList.Runner), new Post(0.6f, 0.5f, Face.Entry, null, null, BehaviorList.Defensive) },
+        null, null, null,
+    };
+    // door waves under FilmTotals (null = no wave): 2 one scout on the alarm, 4 two agents, 7 two agents, 10 one soldat
+    static readonly Foe[][] FilmTotalWaves =
+    {
+        null, new[] { new Foe(CharacterTypes.Nexus2_Scout, 1) }, null, new[] { new Foe(CharacterTypes.Nexus1_Agent, 2) }, null, null,
+        new[] { new Foe(CharacterTypes.Nexus1_Agent, 2) }, null, null, new[] { new Foe(CharacterTypes.Nexus6_Soldat, 1) },
+    };
     const AlertStatus Calm = AlertStatus.Unaware;
     static readonly Post[][] Posts =
     {
@@ -592,7 +622,7 @@ public static class NexusProminenceBuilder
     static void Stage(GameObject go, Marker_Character m, Frame f, Bounds fb, int index, int n)
     {
         if (index >= Posts.Length || n >= Posts[index].Length) return;
-        var p = Posts[index][n];
+        var p = FilmTotals && FilmTotalPosts[index] != null ? (n < FilmTotalPosts[index].Length ? FilmTotalPosts[index][n] : Posts[index][n]) : Posts[index][n];
         float u = Mathf.Max(0.45f, p.u);
         go.transform.position = new Vector3(Mathf.Lerp(f.x0 + 1f, f.x1 - 1f, u), go.transform.position.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, p.v));
         var dir = p.face == Face.Entry ? Vector3.left : p.face == Face.Exit ? Vector3.right : p.face == Face.Back ? Vector3.forward : Vector3.back;
@@ -1001,7 +1031,9 @@ public static class NexusProminenceBuilder
     // 3: office with a long service counter, a glowing back window and a door marked by a red header.
     static void ControlsOffice(Frame f)
     {
-        Box(f, "BackWindow", f.Cx + 3f, f.y + 3.2f, f.zb - 0.06f, 12f, 3.2f, 0.04f, "screen");
+        // round 7 FilmRedFields: the film's office is one big red field from the counter top to the ceiling (2:41)
+        if (FilmRedFields) Box(f, "BackWindow", f.Cx + 3f, f.y + 3.5f, f.zb - 0.06f, 12f, 3.8f, 0.04f, "screen");
+        else Box(f, "BackWindow", f.Cx + 3f, f.y + 3.2f, f.zb - 0.06f, 12f, 3.2f, 0.04f, "screen");
         Box(f, "BackWindowFrame", f.Cx + 3f, f.y + 1.5f, f.zb - 0.15f, 12.4f, 0.25f, 0.2f, "dark");
         Model(Box(f, "Counter", f.Cx + 3f, f.y + 0.6f, f.zb - 2.2f, 12f, 1.2f, 1.0f, "panel"), "nx_counter");
         Box(f, "CounterTop", f.Cx + 3f, f.y + 1.25f, f.zb - 2.2f, 12.3f, 0.1f, 1.2f, "dark");
@@ -1069,12 +1101,12 @@ public static class NexusProminenceBuilder
             Box(f, "Slat", sx, yy + 0.13f, f.zb - 0.15f, sw, 0.24f, 0.08f, "steel");
         Box(f, "ShutterGuideA", sx - sw / 2 - 0.1f, sy0 + sh / 2, f.zb - 0.2f, 0.2f, sh + 0.4f, 0.25f, "dark");
         Box(f, "ShutterGuideB", sx + sw / 2 + 0.1f, sy0 + sh / 2, f.zb - 0.2f, 0.2f, sh + 0.4f, 0.25f, "dark");
-        Box(f, "Console", sx, f.y + 0.8f, f.zb - 0.6f, sw - 1f, 1.6f, 0.9f, "panel");
+        Model2(Box(f, "Console", sx, f.y + 0.8f, f.zb - 0.6f, sw - 1f, 1.6f, 0.9f, "panel"), "nx_console");
         for (int i = 0; i < 4; i++) Box(f, "ConsoleLamp", sx - 3f + i * 2f, f.y + 1.0f, f.zb - 1.07f, 0.8f, 0.6f, 0.03f, i == 3 ? "screen" : "dark");
         Box(f, "WallPanel", f.x1 - 4f, f.y + 3.2f, f.zb - 0.1f, 2.2f, 3.0f, 0.08f, "dark");
         Box(f, "WallPanelStripes", f.x1 - 4f, f.y + 2.0f, f.zb - 0.15f, 2.2f, 0.3f, 0.04f, "red");
         // vending machine and a banner beside the shutter, oil stains on the floor
-        Box(f, "Vending", f.x0 + 2.4f, f.y + 1.9f, f.zb - 0.7f, 1.6f, 3.8f, 1.2f, "dark");
+        Model2(Box(f, "Vending", f.x0 + 2.4f, f.y + 1.9f, f.zb - 0.7f, 1.6f, 3.8f, 1.2f, "dark"), "nx_vending");
         Box(f, "VendingFace", f.x0 + 2.4f, f.y + 2.3f, f.zb - 1.32f, 1.2f, 2.4f, 0.03f, "screen");
         Banner(f, f.x1 - 7f, f.y + 3.4f, f.zb - 0.1f, false);
         foreach (var x in new[] { 0.3f, 0.55f, 0.75f }) Box(f, "OilStain", f.x0 + x * f.W, f.y + 0.01f, f.Cz + (x - 0.5f) * 3f, 1.6f, 0.006f, 1.0f, "stain");
@@ -1237,9 +1269,9 @@ public static class NexusProminenceBuilder
         // a slate board with chalk lines, a fridge and a vending machine, a banner
         Box(f, "Slate", f.x0 + 4.5f, f.y + 3.6f, f.zb - 0.1f, 3.2f, 2.0f, 0.06f, "dark");
         for (int i = 0; i < 4; i++) Box(f, "Chalk", f.x0 + 4.5f - 0.2f * (i % 2), f.y + 4.2f - i * 0.4f, f.zb - 0.14f, 2.2f - 0.3f * i, 0.06f, 0.02f, "white");
-        Box(f, "Fridge", f.x1 - 2.2f, f.y + 2.0f, f.zb - 0.7f, 1.6f, 4.0f, 1.2f, "white");
-        Box(f, "FridgeLine", f.x1 - 2.2f, f.y + 2.7f, f.zb - 1.31f, 1.6f, 0.05f, 0.02f, "dark");
-        Box(f, "Vending", f.x1 - 4.2f, f.y + 1.9f, f.zb - 0.7f, 1.6f, 3.8f, 1.2f, "dark");
+        Model2(Box(f, "Fridge", f.x1 - 2.2f, f.y + 2.0f, f.zb - 0.7f, 1.6f, 4.0f, 1.2f, "white"), "nx_fridge");
+        Box(f, "FridgeLine", f.x1 - 2.2f, f.y + 2.7f, f.zb - (MoreModelledProps ? 1.38f : 1.31f), 1.6f, 0.05f, 0.02f, "dark");
+        Model2(Box(f, "Vending", f.x1 - 4.2f, f.y + 1.9f, f.zb - 0.7f, 1.6f, 3.8f, 1.2f, "dark"), "nx_vending");
         Box(f, "VendingFace", f.x1 - 4.2f, f.y + 2.3f, f.zb - 1.32f, 1.2f, 2.4f, 0.03f, "screen");
         Banner(f, f.x0 + 1.9f, f.y + 3.4f, f.zb - 0.1f, false);
     }
@@ -1374,6 +1406,15 @@ public static class NexusProminenceBuilder
         return s;
     }
     static int modelCount;
+
+    // Round 7 (build zq, concern 3 second pass): the next most visible boxes the film shows as framed props, on the
+    // same path: garage console, the two vending machines, the break room fridge (tools/make_props.py). Locker
+    // frames stand 5 cm proud and bench slats have 9 cm gaps (both from round 5's rough edges). false = zp boxes
+    // for the new props (the locker and bench OBJ changes ride on ModelledProps).
+    const bool MoreModelledProps = true;
+    static GameObject Model2(GameObject s, string obj) { return MoreModelledProps ? Model(s, obj) : s; }
+    // Round 7: the film's large red fields drawn closer to their size where the frames show them (office back window).
+    const bool FilmRedFields = true;
 
     static void OpenCrate(Frame f, float x, float z, float s)
     {
@@ -1891,7 +1932,7 @@ public static class NexusProminenceBuilder
         switch (index)
         {
             case 3: // cargo bay: a rappel team drops in once the fight has started
-                Squad(room, f, "CargoRappel", 14f, 3, Cap(3, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 3)),
+                if (!FilmTotals) Squad(room, f, "CargoRappel", 14f, 3, Cap(3, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 3)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T5, SpawnDoor(room, f, "Rappel_A", ProxyObj_Door.ProxyType.Rapel, 0.45f, 0.55f));
                 break;
             case 5: // shutter garage: two spike strips across the floor, out of step with each other
@@ -1899,14 +1940,14 @@ public static class NexusProminenceBuilder
                 Spikes(room, f, "B", 0.66f, 0.5f, 120f);
                 break;
             case 6: // spotlight corridor: agents crawl out of the wall vents; one spike strip mid-corridor
-                Squad(room, f, "CorridorVents", 10f, 2, Cap(4, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 4)),
+                if (!FilmTotals) Squad(room, f, "CorridorVents", 10f, 2, Cap(4, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 4)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T5,
                     SpawnDoor(room, f, "Vent_A", ProxyObj_Door.ProxyType.VentSide, 0.4f, 0.97f),
                     SpawnDoor(room, f, "Vent_B", ProxyObj_Door.ProxyType.VentSide, 0.75f, 0.97f));
                 Spikes(room, f, "A", 0.55f, 0.3f, 0f);
                 break;
             case 9: // control tower: reinforcement waves by vent and rappel line, riot guards and soldats last
-                Squad(room, f, "TowerReinforcements", 12f, 3, Cap(6, 7),
+                if (!FilmTotals) Squad(room, f, "TowerReinforcements", 12f, 3, Cap(6, 7),
                     Units(new Foe(CharacterTypes.Nexus1_Agent, 5), new Foe(CharacterTypes.Nexus4_Riot__Guard, 2), new Foe(CharacterTypes.Nexus6_Soldat, 2)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged,
                     SpawnDoor(room, f, "Vent_A", ProxyObj_Door.ProxyType.VentSide, 0.3f, 0.97f),
@@ -1962,12 +2003,13 @@ public static class NexusProminenceBuilder
         }
         if (spare.Length == 0) { Debug.LogWarning("NexusProminence: " + room.name + " has no spare door for its door wave"); return; }
         var w = DoorWavePlan[index];
+        if (FilmTotals && FilmTotalWaves[index] != null) { w.Foes = FilmTotalWaves[index]; w.Cap = Mathf.Min(w.Cap, 4); if (index == 1) w.Delay = 8f; }
         foreach (var d in spare) { d.SerialNumber = "NXP_" + room.name + "_door_" + System.Array.IndexOf(spare, d); EditorUtility.SetDirty(d); }
         var m = Squad(room, f, "DoorWave", w.Delay, 2, w.Cap, Units(w.Foes),
             index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5, spare);
         if (m != null && w.OnAlarm) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
         // Round 6: in the film (1:05) one hall agent walks in through the door mid-fight; the placed scout does that
-        if (StagedFights && index == 1)
+        if (StagedFights && !FilmTotals && index == 1)
         {
             var walker = room.GetComponentsInChildren<Marker_Character>(true).FirstOrDefault(c => c.SerialNumber == "NXP_" + Rooms[index].Name + "_3");
             var door = spare[spare.Length - 1];
