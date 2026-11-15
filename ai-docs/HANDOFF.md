@@ -4,6 +4,8 @@
 
 Status: in progress, round 4 of 10 done. Last build is zn (round 4, not played; zj is the played one on the Workshop); the next build letter is zo. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
 
+Chain goals: madnesswright 1.0 release in round 10 (or after the owner's end test if it depends on in-game proof).
+
 Scorecard (1 poor to 5 good; score each row with one line of evidence at the end of every round; round 1 sets the baseline before it changes anything):
 
 | # | Concern | Score | Evidence | Rounds spent |
