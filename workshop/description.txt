@@ -21,7 +21,7 @@ A template inspired by the fan collab "NEXUS: HANK RAID" (watch it: https://www.
 Use: enable the mod from the gear icon, open the Playground terminal and load Nexus Prominence.
 
 Early test build: tell us about doors that don't connect, rooms you can't clear or walls in odd places.
-Planned, not confirmed in play yet: reinforcement squads from a vent and rappel lines in the control tower and cargo bay, and timed spike strips in the shutter garage and spotlight corridor. If you see them work (or not), say so in the comments.
+Reinforcements: every room sends backup through its side doors once you have thinned the guards out; in the first three rooms backup comes only if the alarm goes up. The cargo bay also gets a rappel team, the spotlight corridor agents from the vents, and the control tower a last big wave. Timed spike strips in the shutter garage and spotlight corridor. Not yet confirmed in play since the last update: if backup never arrives, or arrives too early, say so in the comments.
 
 Source, build steps and issues: https://github.com/m4bwav/nexus-prominence
 
