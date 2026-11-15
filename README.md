@@ -24,6 +24,10 @@ Each room its own place 2026-11-14 (build zn, ten rounds round 4): lighter mid-g
 
 ![Build zm (left) and zn (right), all ten rooms](renders/rooms-zm-vs-zn-2026-11-14zn.jpg)
 
+Care and finish 2026-11-14 (build zo, ten rounds round 5): the office counter, control tower desk, lockers, locker-room bench and cabinet are modelled props made in code (`ModelledProps`; `tools/make_props.py` writes OBJs in metres that import 1:1), at the size of the boxes they replace, so cover is unchanged. The controls office, sniper loft and locker room take a warmer, lighter grade from the film frames (`FilmGrade`: mauve office with a pale dado, brown loft with a red skirting line, locker room lit red from above). The Workshop text now says how the map was made; a new preview and gallery wait in the lab, not uploaded. Not played.
+
+![Room 3 from the film camera, zn (left) and zo (right)](renders/room-3-zn-vs-zo-2026-11-14zo.jpg)
+
 Drawn surfaces and a modelled crate 2026-11-14 (build zm, ten rounds round 3): walls, panels, floors and asphalt now wear tiling textures (outlined metal wall panels and floor slabs, generated with Z-Image through comfyui-gen, cropped to whole cells so they tile, tinted to the map's own colours by `tools/make_textures.py`; the full-size sources and recipe stay in the lab). UVs are set in metres (`TileMetres` 2.5) so a panel keeps one size on every box. The crate body is now a modelled crate with raised edge frames (made in code, imported as OBJ; the import came in at exactly 1.0 x 1.2 x 1.0, so OBJ in metres imports 1:1 into SceneTools). Toggles `TexturedSurfaces` and `HeroCrate`; false restores the zl look. Camera, zoom, room sizes and enemies unchanged. Not played.
 
 ![Room 4 of build zm, the cargo bay with tiled floor and wall panels](renders/room-4-2026-11-14zm.jpg)
