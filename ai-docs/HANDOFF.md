@@ -2,7 +2,7 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
-Status: waiting on the owner's test. All ten rounds done; round 10 changed no map, so the build to play is zs, already deployed (C:/Users/m4bwa/AppData/LocalLow/Gibbing Tree/Madness Project Nexus/Mods/NexusProminence/nexusprominence.sobj, md5 equal to lab sobj-zs/). zj is still the played build on the Workshop. End test: askwright set `nexus-endtest-2026-11-14` (lab ask/endtest-2026-11-14; `ask.py serve <set> --detach`, served 2026-11-14 at http://127.0.0.1:47631/s/4b2085b2182e/).
+Status: waiting on the owner's test. All ten rounds done; round 10 changed no map, so the build to play is zs, already deployed (the game's Mods folder, NexusProminence/nexusprominence.sobj, md5 equal to lab sobj-zs/). zj is still the played build on the Workshop. End test: askwright set `nexus-endtest-2026-11-14` (lab ask/endtest-2026-11-14; `ask.py serve <set> --detach`, served 2026-11-14 at http://127.0.0.1:47631/s/4b2085b2182e/).
 
 Chain goals: madnesswright 1.0 release in round 10: done, https://github.com/m4bwav/madnesswright/releases/tag/v1.0.0 (PR #126, installed 1.0.0); its README lists what is still unverified in game.
 
@@ -184,7 +184,7 @@ Film count per room (standing table; owner 2026-11-14: "Don't betray the movie: 
 | 9 Break room | 9:40-10:30 | about 4 | placed | 5 + 0 |
 | 10 Control tower | 10:35-10:50 | about 3 on screen, end of a running fight | the fight carries in | 7 + 4 door + 9 wave |
 
-Open questions for the owner: on askwright set `nexus-endtest-2026-11-14` (play zs and report, rounds to undo, notes, Workshop links-only update, small calls to revisit, tags). Folder: D:/m4bwa/Claude/Projects/Ai/madnesswright-lab/nexus/ask/endtest-2026-11-14 (side-by-side zj vs zs renders of all ten rooms in img/).
+Open questions for the owner: on askwright set `nexus-endtest-2026-11-14` (play zs and report, rounds to undo, notes, Workshop links-only update, small calls to revisit, tags). Folder: lab ask/endtest-2026-11-14 (side-by-side zj vs zs renders of all ten rooms in img/).
 
 End test list (one line per change, filled by each round):
 - Round 1 (zk), backup through doors: in rooms 1-3 stay unseen and check no one comes; then fire a shot and count the agents walking in from the side doors (2, 3, 3). Rooms 4-10: with about half the guards down, backup walks in from the side doors (undo: `DoorReinforcements = false`, or sobj-zk vs zj).
