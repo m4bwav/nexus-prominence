@@ -45,6 +45,7 @@ Round 4 of 10 (2026-11-14, build zn, concern 1 Coherence and interest; branch ro
 - Gates: compiles; corners 0 OUT; scene-lint 0 errors (old S10/S12 warnings); check-mod and deploy clean; overlaps room 1: 2 + 1 filler, room 3: 3 (known); a first build had alarm beacons crossing room 2's door lightboxes, raised above them. .sobj 2.30 -> 2.35 MB.
 - Way back: lab sobj-zn/ (sobj-zm/ restores zm), or both toggles false. Screens: lab gal-zn/, film-match-zn_film/, cmp-zm-zn.jpg; repo renders/rooms-zm-vs-zn-2026-11-14zn.jpg and room-9-2026-11-14zn.jpg (480 px).
 - Unverified in game: ambient and lamp colours as the game's lighting renders them; whether the headers read as way in/way on; light tiles in the asset bundle.
+- Toolkit: madnesswright 0.1.34 (PR #120, release v0.1.34, installed): scene-lint S17 warns when all rooms share one AmbientColor; info.room_ambient_luma shows the light arc (zn: 9 values read, one room kept no override).
 - Left rough: rooms 3, 5, 8 still read as one dark box with red trim and get their identity from props; same fight shape in every room; no new cover layouts.
 
 Round 3 plan (concern 3, details and textures; comfyui-gen, polywright code route, artwright-judge):
