@@ -17,6 +17,12 @@ public static class NexusShots
         Directory.CreateDirectory(dir);
         EditorSceneManager.OpenScene("Assets/Scenes/NexusProminence_PG.unity");
         var rooms = Object.FindObjectsOfType<RoomObj>();
+        // Round 7: SceneTools layout markers (Camera_Target is a cone on a disc, Camera_Point, Borders) are editor
+        // gizmo meshes the game does not draw; they showed in the film-camera renders as a dark cone on the floor.
+        // -showLayout keeps them.
+        if (System.Array.IndexOf(args, "-showLayout") < 0)
+            foreach (var r in Object.FindObjectsOfType<Renderer>())
+                if (r.transform.parent != null && r.transform.parent.name == "Layout") r.enabled = false;
         foreach (var room in rooms)
         {
             var cam = room.CameraPoint;
