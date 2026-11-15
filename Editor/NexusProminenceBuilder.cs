@@ -644,6 +644,11 @@ public static class NexusProminenceBuilder
     // charcoal and hid the round 3 panels; false = the zm values (tiles *_light come from make_textures.py).
     const bool RoomIdentity = true;
     const bool LighterWalls = true;
+    // Round 8 (build zr): the way-in (lit) and way-on (red) headers were boxes 2.2 m long across the room, so on a
+    // side-wall door they stuck out into the room as a short stick, and near the camera side they were hidden; only
+    // rooms 1, 3 and 8 showed one. WallHeaders lays both flat along the wall above the chained door, the same in
+    // every room. false = the zn placement.
+    const bool WallHeaders = false; // judge r8: zq headers won appeal in rooms 1, 5, 8 (the flat bar hid the red way-on bar); kept off
     // ambient r,g,b and lamp colour r,g,b per room; a negative lamp red keeps the room's own lamp colour
     static readonly float[,] IdentityLight = {
         { 0.30f, 0.29f, 0.29f, 1f, 0.90f, 0.88f },   // 1 street: calm entry, neutral gray under the red sky (judge r4)
@@ -667,19 +672,33 @@ public static class NexusProminenceBuilder
         { 4, new[] { 0.32f, 0.25f, 0.23f, 1f, 0.80f, 0.70f } },   // 5 loft: warm brown, ledge lit
         { 7, new[] { 0.42f, 0.25f, 0.25f, 1f, 0.45f, 0.42f } } }; // 8 lockers: red light from above
 
+    // Round 8 (build zr), whole-map coherence: walking the run, the corridor (room 7) was the seam that broke it,
+    // luma 22 against 40 and 31 either side and the film's 44 (film median 62,31,30, map 18,12,13), and the garage
+    // (room 6) was neutral gray where the film is red (116,34,32 vs 54,42,42). FilmSeams grades both from the film
+    // and keeps the corridor the darkest room of the run. false = the zq light.
+    const bool FilmSeams = true;
+    static readonly Dictionary<int, float[]> FilmSeamLight = new Dictionary<int, float[]> {
+        { 5, new[] { 0.44f, 0.27f, 0.26f, 1f, 0.80f, 0.76f } },   // 6 garage: red-brown, as the film at 6:25
+        { 6, new[] { 0.30f, 0.17f, 0.17f, -1f, 0f, 0f } } };      // 7 corridor: dark red, still the darkest; cones unchanged
+
     static void IdentityLights(RoomObj room, int index)
     {
         if (!RoomIdentity || index >= IdentityLight.GetLength(0)) return;
-        room.AmbientColor = new Color(IdentityLight[index, 0], IdentityLight[index, 1], IdentityLight[index, 2]);
-        if (FilmGrade && FilmGradeLight.ContainsKey(index))
-        {
-            var g = FilmGradeLight[index];
-            for (int k = 0; k < 6; k++) IdentityLight[index, k] = g[k];
-            room.AmbientColor = new Color(g[0], g[1], g[2]);
-        }
-        if (IdentityLight[index, 3] >= 0f)
-            foreach (var l in room.GetComponentsInChildren<Light>(true)) l.color = new Color(IdentityLight[index, 3], IdentityLight[index, 4], IdentityLight[index, 5]);
+        // a copy: round 5 wrote the film grade back into the shared table (harmless once, wrong on a second Build)
+        var g = new float[6]; for (int k = 0; k < 6; k++) g[k] = IdentityLight[index, k];
+        if (FilmGrade && FilmGradeLight.ContainsKey(index)) g = FilmGradeLight[index];
+        if (FilmSeams && FilmSeamLight.ContainsKey(index)) g = FilmSeamLight[index];
+        room.AmbientColor = new Color(g[0], g[1], g[2]);
+        if (g[3] >= 0f)
+            foreach (var l in room.GetComponentsInChildren<Light>(true)) l.color = new Color(g[3], g[4], g[5]);
         Debug.Log("NexusProminence: " + room.name + " identity ambient " + room.AmbientColor);
+    }
+
+    static void Header(Frame f, string name, Vector3 d, string mat)
+    {
+        if (d.z > f.zb - 1f) { Box(f, name, d.x, f.y + 5.0f, f.zb - 0.1f, 2.6f, 0.22f, 0.08f, mat); return; } // a back-wall door
+        bool left = d.x < f.Cx;
+        Box(f, name, left ? f.x0 + 0.1f : f.x1 - 0.1f, f.y + 5.0f, d.z, 0.08f, 0.22f, 2.6f, mat);
     }
 
     static void Identity(Frame f, RoomObj room, int index)
@@ -688,8 +707,18 @@ public static class NexusProminenceBuilder
         if (f.Doors.Count > 0)
         {
             var din = f.Doors.OrderBy(d => d.x).First(); var dout = f.Doors.OrderBy(d => d.x).Last();
-            Box(f, "EntryHeader", din.x, f.y + 4.9f, din.z > f.zb - 1f ? f.zb - 0.12f : din.z, 2.2f, 0.18f, 0.12f, "lit");
-            if (dout != din) Box(f, "ExitHeader", dout.x, f.y + 4.9f, dout.z > f.zb - 1f ? f.zb - 0.12f : dout.z, 2.2f, 0.18f, 0.12f, "screen");
+            if (WallHeaders)
+            {
+                // round 8: the same sign in every room, flat on the side wall above the hazard bar of the chained door
+                // (ChainDoors links the leftmost and rightmost door, the same picks as here)
+                Header(f, "EntryHeader", din, "lit");
+                if (dout != din) Header(f, "ExitHeader", dout, "screen");
+            }
+            else
+            {
+                Box(f, "EntryHeader", din.x, f.y + 4.9f, din.z > f.zb - 1f ? f.zb - 0.12f : din.z, 2.2f, 0.18f, 0.12f, "lit");
+                if (dout != din) Box(f, "ExitHeader", dout.x, f.y + 4.9f, dout.z > f.zb - 1f ? f.zb - 0.12f : dout.z, 2.2f, 0.18f, 0.12f, "screen");
+            }
         }
         switch (index)
         {
@@ -1960,10 +1989,10 @@ public static class NexusProminenceBuilder
     // Round 1 (build zk). The game lets a wave squad in only while the room's living enemies of that faction plus
     // the next squad stay at or under the wave's MaxUnitCount (Wave_Tandem.CanSpawnWithoutBreachingMax). With the
     // old caps the cargo bay rappel team (cap 3, squad 3, five placed enemies) could only come once the room was
-    // empty, and the vents and tower waves late. ReinforceWhileFighting raises the caps so they arrive mid-fight;
-    // false restores the zj caps.
-    const bool ReinforceWhileFighting = true;
-    static int Cap(int zj, int zk) { return ReinforceWhileFighting ? zk : zj; }
+    // empty, and the vents and tower waves late, so round 1 raised them (zj -> zk: 3 -> 5, 4 -> 5, 6 -> 7).
+    // Round 8 retired the ReinforceWhileFighting toggle: its only squads (rappel, vents, tower) exist only with
+    // FilmTotals false, and then the zk caps apply. The zj caps stay readable here and in git history.
+    static int Cap(int zj, int zk) { return zk; }
 
     // Round 1 (build zk): every spare door of the sample room was a framed doorway nothing came through. DoorWaves
     // sends a small reinforcement squad through them in every room, sized to a saw-tooth curve (peaks at rooms 4,
@@ -2008,13 +2037,12 @@ public static class NexusProminenceBuilder
         var m = Squad(room, f, "DoorWave", w.Delay, 2, w.Cap, Units(w.Foes),
             index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5, spare);
         if (m != null && w.OnAlarm) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
-        // Round 6: in the film (1:05) one hall agent walks in through the door mid-fight; the placed scout does that
-        if (StagedFights && !FilmTotals && index == 1)
-        {
-            var walker = room.GetComponentsInChildren<Marker_Character>(true).FirstOrDefault(c => c.SerialNumber == "NXP_" + Rooms[index].Name + "_3");
-            var door = spare[spare.Length - 1];
-            if (walker != null) { walker.SpawnFromDoor = door; EditorUtility.SetDirty(walker); Debug.Log("NexusProminence: NX_WALKIN " + walker.name + " enters by " + door.name); }
-        }
+        // Round 6 sent the hall's placed scout in by Marker_Character.SpawnFromDoor; round 8 retired that. Decompiled
+        // game: Converter_Marker copies SpawnFromDoor to Char_DataAssigner.SpawnToEntranceOrVehicle, and the character
+        // spawns as soon as its room becomes current (CanSpawnOnSceneStart, Update) and is handed straight to the door
+        // (GiveCharacterToMe): it walks in on room entry, with no delay and no alarm condition. The film's walk-in is
+        // mid-fight, so the FilmTotals door squad (MyFactionAlerted, then SecondsInRoomTilSpawn) is the right tool.
+        // The zp walker: sobj-zp.
     }
 
     static List<WaveCharacter_STP> Units(params Foe[] foes)
