@@ -736,8 +736,10 @@ public static class NexusProminenceBuilder
             }
             else
             {
-                Box(f, "EntryHeader", din.x, f.y + 4.9f, din.z > f.zb - 1f ? f.zb - 0.12f : din.z, 2.2f, 0.18f, 0.12f, "lit");
-                if (dout != din) Box(f, "ExitHeader", dout.x, f.y + 4.9f, dout.z > f.zb - 1f ? f.zb - 0.12f : dout.z, 2.2f, 0.18f, 0.12f, "screen");
+                // owner 2026-11-14 (build zu): on a side-wall door this box stuck out of the wall and hung in front of
+                // the doorway as a floating red dash; only back-wall doors keep it, flat on the wall
+                if (din.z > f.zb - 1f) Box(f, "EntryHeader", din.x, f.y + 4.9f, f.zb - 0.12f, 2.2f, 0.18f, 0.12f, "lit");
+                if (dout != din && dout.z > f.zb - 1f) Box(f, "ExitHeader", dout.x, f.y + 4.9f, f.zb - 0.12f, 2.2f, 0.18f, 0.12f, "screen");
             }
         }
         switch (index)

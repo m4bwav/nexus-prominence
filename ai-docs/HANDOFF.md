@@ -2,6 +2,8 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
+Exit-bar fix 2026-11-14 (build zu, deployed): the owner saw a floating red "minus" over the exit door in some rooms: the round 4 ExitHeader/EntryHeader box (2.2 m, placed at a side-wall door's x) stuck out into the room. Now only back-wall doors get the header, flat on the wall (Identity, non-WallHeaders path). Gates clean (corners 0 OUT, check-mod, known overlaps); lab sobj-zu, cmp-zt-zu.jpg. Play zu instead of zt.
+
 Spawn fix 2026-11-14 (build zt, deployed): the owner's first play of zs fell through the world on load. Player.log: FallToDeath every frame (SwainM.RandomElement throws: every room 1 door is DisableSpawn, so the safe-fall rescue has no door). Cause: the sample's Player_Start stands inside the Playground booth, 6 m behind room 1's back wall (z 13.2 vs 6.81) and 7 m up; round 2 removed the booth (zl), leaving nothing under it. Fix: PlacePlayerStart puts it on room 1's floor at the entry side and fails the build when no Floor is under it (build-zt.log). Lab sobj-zt. Waiting on the owner to play zt; the end test set still applies.
 
 Status: waiting on the owner's test. All ten rounds done; round 10 changed no map, so the build to play is zs, already deployed (the game's Mods folder, NexusProminence/nexusprominence.sobj, md5 equal to lab sobj-zs/). zj is still the played build on the Workshop. End test: askwright set `nexus-endtest-2026-11-14` (lab ask/endtest-2026-11-14; `ask.py serve <set> --detach`, served 2026-11-14 at http://127.0.0.1:47631/s/4b2085b2182e/).
