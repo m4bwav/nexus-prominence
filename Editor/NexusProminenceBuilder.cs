@@ -105,11 +105,12 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < Rooms.Length; i++)
         {
             var room = built[i];
+            room.gameObject.name = "Room_" + Rooms[i].Name; // before Stretch, so its log lines name the room
             Stretch(room, Rooms[i].Width * WidthScale, Rooms[i].Depth); // owner 2026-11-11: narrower
             FitCamera(room);
-            room.gameObject.name = "Room_" + Rooms[i].Name;
             room.ForceStartingRoom = i == 0;
             if (i > 0) StripStartOnly(room);
+            else if (!PlaygroundControlRoom) StripControlRoom(room);
             Dress(room, Rooms[i], i, mats, charPrefab);
         }
         ChainDoors(built);
@@ -203,6 +204,19 @@ public static class NexusProminenceBuilder
             }
             else StretchWalk(c, room, ax, az, sx, sz, ref scaled, ref moved);
         }
+    }
+
+    // Round 2 (build zl): the sample's PX_Playground proxy turns in game into the Playground control room
+    // (Converter_Proxy.ReplaceProxy: Library.Proxy_Playground, window masked through the back wall), a white
+    // lab booth showing through room 1's city skyline: the Workshop's "playground room for no reason". The
+    // map loads without it (it is loaded from the Default Chamber's terminal; difficulty is global; the pause
+    // menu still returns to the menu). True puts the booth back in room 1 with its spawn and stage menus.
+    const bool PlaygroundControlRoom = false;
+
+    static void StripControlRoom(RoomObj room)
+    {
+        foreach (var p in room.GetComponentsInChildren<ProxyObj_Playground>(true)) Object.DestroyImmediate(p.gameObject);
+        Debug.Log("NexusProminence: " + room.name + " has no Playground control room (PlaygroundControlRoom off)");
     }
 
     // Player_Start and the Playground terminal live only in the first room.
@@ -1637,6 +1651,12 @@ public static class NexusProminenceBuilder
     // 7 and 10, a breather in 5 and 8). The three quiet rooms send theirs only once the alarm is up
     // (SpawnRequirement MyFactionAlerted), so a quiet start stays quiet. Set DoorReinforcements false to build without.
     const bool DoorReinforcements = true;
+    // Round 2 (build zl), owner 2026-11-14: "Don't betray the movie: the first room is only 2 enemies." Door waves
+    // stay only in the rooms where the film shows enemies walking in during the fight (wanted hall, cargo bay,
+    // spotlight corridor, control tower; film table in ai-docs/HANDOFF.md). Elsewhere the spare doors are shut
+    // (DisableSpawn) so room 1 holds exactly its 2 agents. False restores round 1's door wave in every room.
+    const bool FilmTrueArrivals = true;
+    static readonly bool[] FilmDoorWaves = { false, true, false, true, false, false, true, false, false, true };
     struct DoorWave { public float Delay; public bool OnAlarm; public int Cap; public Foe[] Foes; }
     static readonly DoorWave[] DoorWavePlan =
     {
@@ -1655,6 +1675,13 @@ public static class NexusProminenceBuilder
     static void DoorWaves(RoomObj room, Frame f, int index, ProxyObj_Door[] spare)
     {
         if (!DoorReinforcements || index >= DoorWavePlan.Length) return;
+        if (FilmTrueArrivals && !FilmDoorWaves[index])
+        {
+            // the film shows no one walking in here: keep the spare doors shut instead of inventing a squad
+            foreach (var d in spare) { d.DisableSpawn = true; EditorUtility.SetDirty(d); }
+            Debug.Log("NexusProminence: " + room.name + " no door wave (film shows none); " + spare.Length + " spare doors shut");
+            return;
+        }
         if (spare.Length == 0) { Debug.LogWarning("NexusProminence: " + room.name + " has no spare door for its door wave"); return; }
         var w = DoorWavePlan[index];
         foreach (var d in spare) { d.SerialNumber = "NXP_" + room.name + "_door_" + System.Array.IndexOf(spare, d); EditorUtility.SetDirty(d); }

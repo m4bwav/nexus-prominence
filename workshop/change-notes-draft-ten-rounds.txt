@@ -1,3 +1,5 @@
 Draft change notes for the next update (ten improvement rounds; nothing here is uploaded until the owner has played it)
 
 - Reinforcements: backup now walks in through the side doors of every room once you thin the guards out (the first three rooms only after the alarm). The cargo bay rappel team, the corridor vent agents and the control tower wave now arrive mid-fight instead of after the room is empty.
+- No more Playground room: the Playground control room booth no longer shows through the street checkpoint's skyline. Set the difficulty in the Default Chamber before loading; leave through the pause menu.
+- Truer to the film: the street checkpoint is two guards again, and backup walks in only where it does in the film (wanted hall, cargo bay, spotlight corridor, control tower); the other rooms keep their side doors shut.
