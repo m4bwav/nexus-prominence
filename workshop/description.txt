@@ -24,7 +24,7 @@ Use: enable the mod from the gear icon, set the difficulty at the Playground ter
 
 Reinforcements follow the film. Backup walks in through the side doors of the wanted hall, cargo bay, spotlight corridor and control tower once you have thinned the guards out (in the hall only if the alarm goes up). The other rooms keep their doors shut. No room holds more enemies, backup included, than the film shows (2, about 4, 3, 7, 4, 3, 5, 3, 4, 5). Timed spike strips sit in the shutter garage and spotlight corridor.
 
-Not yet confirmed in play: how the staged fights play (who holds cover, the sniper, the walk-in), when backup arrives, how the textures and modelled props look at game resolution. Early test build: tell us in the comments about doors that don't connect, rooms you can't clear, walls in odd places, or backup that never comes or comes too early.
+Not yet confirmed in play: how the staged fights play (who holds cover, the sniper, the walk-in), when backup arrives, how the textures, modelled props and the map's own walls look at game resolution. Early test build: tell us in the comments about doors that don't connect, rooms you can't clear, walls in odd places, or backup that never comes or comes too early.
 
 Source, build steps and issues: https://github.com/m4bwav/nexus-prominence
 

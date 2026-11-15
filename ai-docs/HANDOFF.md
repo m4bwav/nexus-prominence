@@ -2,9 +2,9 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
-Status: in progress, round 9 of 10 done. Last build is zs (round 9, not played; zj is the played one on the Workshop); the next build letter is zt. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
+Status: waiting on the owner's test. All ten rounds done; round 10 changed no map, so the build to play is zs, already deployed (C:/Users/m4bwa/AppData/LocalLow/Gibbing Tree/Madness Project Nexus/Mods/NexusProminence/nexusprominence.sobj, md5 equal to lab sobj-zs/). zj is still the played build on the Workshop. End test: askwright set `nexus-endtest-2026-11-14` (lab ask/endtest-2026-11-14; `ask.py serve <set> --detach`, served 2026-11-14 at http://127.0.0.1:47631/s/4b2085b2182e/).
 
-Chain goals: madnesswright 1.0 release in round 10 (or after the owner's end test if it depends on in-game proof).
+Chain goals: madnesswright 1.0 release in round 10: done, https://github.com/m4bwav/madnesswright/releases/tag/v1.0.0 (PR #126, installed 1.0.0); its README lists what is still unverified in game.
 
 Scorecard (1 poor to 5 good; score each row with one line of evidence at the end of every round; round 1 sets the baseline before it changes anything):
 
@@ -15,6 +15,8 @@ Scorecard (1 poor to 5 good; score each row with one line of evidence at the end
 | 3 | Details and textures | 3 | zq: console, 2 vending machines, fridge modelled, locker frames/bench slats clearer, office red field larger (judge: film-truth zq 1 / tie 7, appeal zq 3 / zp 3 / tie 2); box share 0.866, so still 3; zp unchanged (no art touched); zo: modelled counter, desk, lockers, bench, cabinet (box share 0.869); zn: lighter walls let the round 3 panels read from the game camera (judge: legibility); zm: tiled outlined wall panels and floor slabs on 160 renderers, modelled crate body (shots-zm/Room_04_CargoBay_film.png); most props still boxes; judge preferred zm 4/4 orders, low confidence | 2 |
 | 4 | Difficulty and reinforcements | 4 | zq: placed + backup inside the film table in every room (2,4,3,7,4,3,5,3,4,5), hall scout arrives on the alarm; not played; zp: ten staged fights (facing, alertness, weapon, AddBehaviors Camper/HoldCover/Defensive/Hunter/Runner, one SpawnFromDoor walk-in), counts inside the film table (rooms 6, 9, 10 down), scene-lint info.enemy_staging 3 facings, 3 alert states, 23 behaviours; not played, so 4 not 5; zn unchanged (landmarks have no colliders; enemies and cover untouched); zm unchanged (no encounter code touched); zl: backup only where the film shows it (rooms 2, 4, 7, 10; 7 squads), other spare doors shut, so no unused entrance is left (S15 clean); room 1 back to 2 agents; not played | 3 |
 | 5 | Care and appeal | 3 | zr: garage and corridor graded from the film (judge film-truth 2-0); box share 0.866 unchanged, so 3; zq: page and description match the film counts; judge mixed on the props; zp: fights now read as designed on the page and README (fight plan image), look unchanged; zo: 10 modelled props (counter, desk, 6 lockers, bench, cabinet; build-zo.log sizes 1:1), rooms 3/5/8 graded warmer from film medians; blind judge film-truth zo 4 / zn 2 / tie 4, appeal 3/3/4; description now honest about AI use; preview and gallery ready in lab gal-zo (not uploaded). Built-in cubes are still 87% of meshes (S18 info), so 3 not 4 | 1 |
+
+Round 10 rescore on the final zs scene (scene-lint 2026-11-14, madnesswright 1.0.0): 0 errors, 10 warnings (old S10/S12 kind); box_share 0.856; total_with_backup 40 (squad units 6); ambient luma 0.30, 0.21, 0.32, 0.30, 0.28, 0.44, 0.38, 0.31, 0.27 (9 overrides); sample_shell walls and 4th wall hidden 10/10, floor and bib drawn. Rows 1, 3, 4, 5 keep 4, 3, 4, 3: nothing in the map changed, and every number matches the round that set the score; none can rise without a play.
 
 Baseline (round 1, on build zj, before any change):
 - 1 Coherence and interest: 2. All ten rooms share one shell (band, pilasters, pipe; shots-zj) and one fight: walk in, shoot the placed enemies.
@@ -62,6 +64,13 @@ Round 5 of 10 (2026-11-14, build zo, concern 5 Care and appeal; branch round5-ap
 - Unverified in game: the OBJ props in the game's asset bundle and with the in-game outline; how the warmer grades read at game resolution.
 - Left rough: cone lamp shades are crude in several rooms; the film's big saturated red field (office wall, tower glow) is still smaller in the map; bench slats barely read; lockers still show faint seams.
 - Toolkit: madnesswright 0.1.35, scene-lint S18 box share (PR #121).
+
+Round 10 of 10 (2026-11-14, no new build; branch round10-endtest):
+- No map change, so no zt: zs stays the build to play (gates as in round 9). Docs made consistent: README notes ReinforceWhileFighting retired and the hall scout a door squad since round 7, round 9 marked not played; the ten-rounds change-notes draft rewritten to the final state (it still promised rappel and vent waves that round 7 removed); description lists the own walls as unconfirmed; this file's round 1 end-test line on earlier waves marked retired.
+- Wiki: round 9 had put zs into Rooms but Versions stopped at zp; Versions now has zq, zr, zs (pushed 2026-11-14).
+- Judge methods not re-run after rework (noted in rounds 4, 5, 7, 8, 9): left as is; round 10 changed no look, so no blind judge was run.
+- madnesswright 1.0.0 released (PR #126, tag v1.0.0, release workflow green, wiki Versions updated, installed). No registry publishing.
+- End test page: askwright `nexus-endtest-2026-11-14`.
 
 Round 9 of 10 (2026-11-14, build zs, concern 2 The Playground room, second pass; branch round9-walls):
 - Changed: `MapWalls` (default true). Every room's sample wall mesh (`room_pg_room2_walls`) keeps its collider but no longer draws; the map's own panels (NX_MapWall_*, NX_Wall with the round-3 tiled texture, no colliders, no shadows) sit where rays every 0.2 m find the collider solid. Result: 3 panels per room (the sample collider has no door holes; doors are proxies on the wall), height 23.2 m as before. Room sizes, camera, zoom, doors, cover and enemies unchanged (corners 0 OUT, overlaps unchanged).
@@ -175,11 +184,11 @@ Film count per room (standing table; owner 2026-11-14: "Don't betray the movie: 
 | 9 Break room | 9:40-10:30 | about 4 | placed | 5 + 0 |
 | 10 Control tower | 10:35-10:50 | about 3 on screen, end of a running fight | the fight carries in | 7 + 4 door + 9 wave |
 
-Open questions for the owner: none yet. Askwright set: none yet.
+Open questions for the owner: on askwright set `nexus-endtest-2026-11-14` (play zs and report, rounds to undo, notes, Workshop links-only update, small calls to revisit, tags). Folder: D:/m4bwa/Claude/Projects/Ai/madnesswright-lab/nexus/ask/endtest-2026-11-14 (side-by-side zj vs zs renders of all ten rooms in img/).
 
 End test list (one line per change, filled by each round):
 - Round 1 (zk), backup through doors: in rooms 1-3 stay unseen and check no one comes; then fire a shot and count the agents walking in from the side doors (2, 3, 3). Rooms 4-10: with about half the guards down, backup walks in from the side doors (undo: `DoorReinforcements = false`, or sobj-zk vs zj).
-- Round 1 (zk), earlier waves: the cargo bay rappel team lands while 2 guards still stand, the corridor vents open with about 3 left, the tower wave starts with about 4 left (undo: `ReinforceWhileFighting = false`).
+- Round 1 (zk), earlier waves: retired in round 8 (FilmTotals removes the rappel, vent and tower waves); nothing to check.
 - Round 1: stand in a spare doorway and see whether backup appears on top of you (fairness risk).
 - Round 2 (zl), no Playground room: in room 1 the back wall is the whole red city skyline with no lab booth window; set a difficulty in the Default Chamber, load the map, check it applies; leave through the pause menu (undo: `PlaygroundControlRoom = true`, or sobj-zk).
 - Round 3 (zm), textures: walls show outlined metal panels and floors show slabs of one size in every room, nothing stretched or swimming; crates are framed crates and still block movement at their old size (undo: `TexturedSurfaces = false`, `HeroCrate = false`, or sobj-zl).
