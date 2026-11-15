@@ -8,7 +8,7 @@ The goal, the criticism, what is already known about each point and which plugin
 
 1. Read the top of `ai-docs/HANDOFF.md` (the "Ten rounds" block: round counter, scorecard, grants, open questions) and the end of `ai-docs/log.md`. Compare their age with the lab's newest `build-*.log` and the commits on main, and trust the newer evidence.
 2. Read `AGENTS.md` and `README.md` here, and `AGENTS.md` in madnesswright. Their rules apply; this file does not repeat them.
-3. Read the madnesswright-scenes skill and the madnesswright hub skill from the madnesswright clone. Load any other skill only when a round uses it (the brief maps skills to concerns; parked skills are found through the parked-skills index named in the user's global instructions).
+3. Load the chainwright skill (this chain runs subagents, and its ledger and report steps come from there). Read the madnesswright-scenes skill and the madnesswright hub skill from the madnesswright clone. Load any other skill only when a round uses it (the brief maps skills to concerns; parked skills are found through the parked-skills index named in the user's global instructions).
 4. For any askwright set HANDOFF.md names, run `ask.py read`, act on answered questions, close them, then `ask.py consume <set> --note "<what you did>"`. "Not sure" and unanswered questions stay open and are never filled with a guess.
 
 ## 2. What a round is
@@ -50,4 +50,4 @@ Stop early when HANDOFF.md says `Status: finished` or `Status: waiting on the ow
 
 ## 6. Hand over
 
-Hand over when the context is running low, at a stop point, or after round ten. A round is never left half built: finish or revert it first. Order: the wrap-up (evergreen-wrapup if installed; a failure is reported and never blocks), then the log and HANDOFF.md, then print the same start command, `Execute ai-docs/plans/2026-11-14-ten-rounds-continue-prompt.md`, in the nexus-prominence folder (give its absolute path in the reply, not in this public file). A subagent that ran a round wraps up from its own transcript. State goes in HANDOFF.md, never in this file.
+Hand over when the context is running low, at a stop point, or after round ten. A round is never left half built: finish or revert it first. Order: record the session's agent tree with chainwright's `chain_report.py from-session <session> --out ../madnesswright-lab/nexus/chain/chains.json` (never by hand), build the tier report and name it in the final reply; then the wrap-up (evergreen-wrapup if installed; a failure is reported and never blocks), then the log and HANDOFF.md, then print the same start command, `Execute ai-docs/plans/2026-11-14-ten-rounds-continue-prompt.md`, in the nexus-prominence folder (give its absolute path in the reply, not in this public file). A subagent that ran a round wraps up from its own transcript. State goes in HANDOFF.md, never in this file.
