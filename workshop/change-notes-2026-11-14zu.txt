@@ -1,0 +1,8 @@
+- No more Playground room: the Playground control room booth no longer shows through the street checkpoint's skyline, and the walls are the map's own instead of the editor sample's (same rooms, same size). Set the difficulty in the Default Chamber before loading; leave through the pause menu.
+- True to the film's numbers: no room has more enemies than the film shows, backup included. Backup walks in through the side doors only where the film shows it (wanted hall, cargo bay, spotlight corridor, control tower); the hall's scout arrives once the alarm is up. The cargo bay rappel team, corridor vents and tower wave are gone.
+- Every room its own fight: one idea per room from the film (ambush, walk-in, desks, shield wall, sniper, breather, gauntlet, close quarters, false calm, last stand). Riot guards block, others hold cover or rush, a sniper takes the loft ledge.
+- Each room its own place: lighter gray walls and floors as in the film, a light level that rises and falls along the raid (the corridor is dark red, the garage red-brown, the office mauve, the lockers lit red from above), one landmark per room, and a lit bar over the way in and a red one over the way on.
+- Textures and props: walls and floors carry outlined metal panels and floor slabs; crates, the office counter, tower desk, lockers, bench, cabinet, garage console, vending machines and fridge are modelled props of the same size, so cover is unchanged. The office's red back window is as big as in the film.
+- The page text now says plainly how the map was made.
+- You now start on the street checkpoint's floor instead of falling through the world on load.
+- The red bar over a side-wall exit no longer floats in front of the doorway.
