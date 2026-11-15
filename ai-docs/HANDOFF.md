@@ -2,17 +2,17 @@
 
 ## Ten rounds (chain: [plans/2026-11-14-ten-rounds-continue-prompt.md](plans/2026-11-14-ten-rounds-continue-prompt.md), brief: [plans/2026-11-14-ten-rounds-brief.md](plans/2026-11-14-ten-rounds-brief.md))
 
-Status: in progress, round 2 of 10 done. Last build is zl (round 2, not played; zj is the played one on the Workshop); the next build letter is zm. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
+Status: in progress, round 3 of 10 done. Last build is zm (round 3, not played; zj is the played one on the Workshop); the next build letter is zn. While this chain runs it replaces the older continue prompt (2026-11-10), which waits on a play after every change.
 
 Scorecard (1 poor to 5 good; score each row with one line of evidence at the end of every round; round 1 sets the baseline before it changes anything):
 
 | # | Concern | Score | Evidence | Rounds spent |
 |---|---|---|---|---|
-| 1 | Coherence and interest | 2 | Ten rooms still share one shell and one kind of fight; round 2 only took a stray booth out of room 1 (shots-zl = shots-zk) | 0 |
-| 2 | The Playground room | 4 | zl: no PX_Playground left (scene-lint prefab_counts, build-zl.log), so no lab booth in the street skyline; the walls are still the sample mesh (concern 3); not played | 1 |
-| 3 | Details and textures | 2 | Unchanged: solid 4x4 colour textures, box props (shots-zl/Room_04_CargoBay.png) | 0 |
-| 4 | Difficulty and reinforcements | 3 | zl: backup only where the film shows it (rooms 2, 4, 7, 10; 7 squads), other spare doors shut, so no unused entrance is left (S15 clean); room 1 back to 2 agents; not played | 2 |
-| 5 | Care and appeal | 2 | Sum of 1-4 rises a little; Workshop text now says how to set difficulty and leave without the booth; gallery unchanged | 0 |
+| 1 | Coherence and interest | 2 | zm: still one shell and one kind of fight per room; textures make surfaces read as metal and concrete but do not tell rooms apart | 0 |
+| 2 | The Playground room | 4 | zm unchanged; zl: no PX_Playground left (scene-lint prefab_counts, build-zl.log), so no lab booth in the street skyline; the walls are still the sample mesh (concern 3); not played | 1 |
+| 3 | Details and textures | 3 | zm: tiled outlined wall panels and floor slabs on 160 renderers, modelled crate body (shots-zm/Room_04_CargoBay_film.png); most props still boxes; judge preferred zm 4/4 orders, low confidence | 1 |
+| 4 | Difficulty and reinforcements | 3 | zm unchanged (no encounter code touched); zl: backup only where the film shows it (rooms 2, 4, 7, 10; 7 squads), other spare doors shut, so no unused entrance is left (S15 clean); room 1 back to 2 agents; not played | 2 |
+| 5 | Care and appeal | 2 | Sum of 1-4 rises; gal-zm candidates show textures; the page itself is unchanged until upload | 0 |
 
 Baseline (round 1, on build zj, before any change):
 - 1 Coherence and interest: 2. All ten rooms share one shell (band, pilasters, pipe; shots-zj) and one fight: walk in, shoot the placed enemies.
@@ -32,6 +32,18 @@ Round 2 plan (concern 2, the Playground room; game code read with decomp.py, Sce
 - Is it needed to load? No. The map is loaded from the Default Chamber's terminal; `InteractiveMode` (spawn, stages, difficulty menus) lives on the booth and only runs where a booth exists; difficulty is global (`Stage_Manager.SetDifficulty`, set before loading); the pause menu's return to menu (`UI_ButtonEvents` -> `ReturnToMenu`) still leaves the map.
 - Fiction check: the film's room 1 is a street checkpoint under a red sky; a lab booth has no place there, and the tower (room 10) has its monitor wall and desk across the spot the window would cut.
 - Change: `PlaygroundControlRoom = false` drops the booth from room 1 (true restores it). Rooms are named before they are stretched, so build logs read `Room_01_...` instead of `Room_NewPlayground`. Small call, flagged: removal over a move to the tower (the tower spot is taken). Cost: no in-map spawn or stage menu; quit through pause.
+
+Round 3 plan (concern 3, details and textures; comfyui-gen, polywright code route, artwright-judge):
+- Film frames (film-match-zl): walls are flat gray with outlined panel seams and faint grime; floors flat light gray slabs; crates have framed edges. So: one wall-panel and one floor-slab tile in that flat outlined style, tinted to the map's existing colours (the look stays gray-and-red, the outline shader stays), UVs in metres so panels keep one size; one hero prop (the crate body, used in several rooms) made in code and imported to prove the scale before any more props.
+- Film camera: per-room camera fitted to the film frame, so film-match pairs compare framing.
+
+Round 3 of 10 (2026-11-14, build zm, concern 3 Details and textures; branch round3-textures):
+- Changed: `TexturedSurfaces` (wall, panel, floor, asphalt materials take tiles from tools/make_textures.py; `TileUVs` box-projects UVs in metres, `TileMetres` 2.5; 160 renderers, 60 cached meshes in MatDir/UV) and `HeroCrate` (crate body = coded OBJ crate with edge frames; box collider kept at the same size). NexusShots gains `-filmcam -filmcams <file>`. Camera, zoom, room sizes, enemies untouched.
+- Evidence: textures by Z-Image (Apache-2.0), recipe and licence in lab tex-zm/RECIPE.md; pw.py --seamless ghosted the grid, so tiles are crops of whole cells. Hero crate import measured 1.000 x 1.200 x 1.000 (build-zm.log): OBJ in metres imports 1:1 into SceneTools. Gates: compiles; corners 0 OUT; scene-lint 0 errors (old S10/S12 warnings only; run from the SceneTools folder); check-mod and deploy clean; overlaps room 1: 2 + 1 filler, room 3: 3 (the known ones). .sobj 2.14 -> 2.30 MB. Judge (artwright-judge compare, rooms 2 and 4, zl vs zm, both orders): zm 4 of 4, low confidence; judged in this session, not a fresh context, and the difference is subtle (faint tile grid). Way back: lab sobj-zm/ (sobj-zl/ restores zl), or both toggles false.
+- Film camera (owner asked mid-round for real front-on shots matching the film frames): pw.py match is a Blender prop matcher and does not fit a Unity room, so cameras are hand-fitted per room in lab `filmcams.txt` (u across, d from back wall, h, pitch, yaw, fov) and re-rendered with lab `filmshots.sh <letter>` (render only, no rebuild); `film_match.py <letter> film` writes film | render | 50% overlay at the same size (film-match-zm_film/). One fitting pass done: band heights and the wall/floor split now line up roughly; doors, props and room depth do not match the film one to one (the rooms are not the film's sets), and the overlays show it. Later rounds refine filmcams.txt, not the code.
+- Screens: lab gal-zm/ (rooms 1, 2, 4, 6, 7, 10, game view and film camera, plus the film-match sheet); repo renders/room-4-2026-11-14zm.jpg and room-4-film-cam-2026-11-14zm.jpg (480 px). README, description, change-notes draft updated.
+- Unverified in game: that the game's asset bundle keeps the tile textures and the generated UV meshes (editor renders only), how the tiles read at game resolution and with the in-game outline; the crate's frame strips with the outline shader.
+- Left rough: walls are dark, so wall panels barely show from the game camera; most props are still boxes (only the crate body is modelled).
 
 Round 2 of 10 (2026-11-14, build zl, concern 2 The Playground room; branch round2-playground):
 - Changed: `PlaygroundControlRoom = false` (new toggle) removes the sample's PX_Playground from room 1, so the Playground control room no longer appears through the street checkpoint's back wall. Rooms are named before `Stretch`, so build logs name them. Generator only; no camera, zoom or room size touched.
@@ -74,6 +86,7 @@ End test list (one line per change, filled by each round):
 - Round 1 (zk), earlier waves: the cargo bay rappel team lands while 2 guards still stand, the corridor vents open with about 3 left, the tower wave starts with about 4 left (undo: `ReinforceWhileFighting = false`).
 - Round 1: stand in a spare doorway and see whether backup appears on top of you (fairness risk).
 - Round 2 (zl), no Playground room: in room 1 the back wall is the whole red city skyline with no lab booth window; set a difficulty in the Default Chamber, load the map, check it applies; leave through the pause menu (undo: `PlaygroundControlRoom = true`, or sobj-zk).
+- Round 3 (zm), textures: walls show outlined metal panels and floors show slabs of one size in every room, nothing stretched or swimming; crates are framed crates and still block movement at their old size (undo: `TexturedSurfaces = false`, `HeroCrate = false`, or sobj-zl).
 - Round 2 (zl), film-true arrivals: room 1 has exactly 2 agents and no one comes even after a shot; rooms 3, 5, 6, 8, 9 get no backup; rooms 2, 4, 7, 10 still do (undo: `FilmTrueArrivals = false`).
 
 Links side task: done 2026-11-14 (repo and wiki text; mpn-director#1, madnesswright#116, nexus-prominence mod-links PR; wiki Homes pushed). The live Workshop pages still carry the old text until the owner allows a page update.
