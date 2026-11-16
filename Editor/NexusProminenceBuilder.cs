@@ -1139,6 +1139,7 @@ public static class NexusProminenceBuilder
     // supplies, tall dark doorways, red conduits from the ceiling, floor hatches, stripes on the band.
     static void WantedHall(Frame f)
     {
+        if (FilmRoom2Structures) { FilmWanted(f); return; }
         float[] doors = { f.x0 + 0.30f * f.W, f.x0 + 0.78f * f.W };
         foreach (var x in doors)
         {
@@ -1198,6 +1199,86 @@ public static class NexusProminenceBuilder
             Box(f, "Hatch", hx, f.y + 0.02f, hz, 2.2f, 0.024f, 1.4f, "black");
             for (int i = 0; i < 5; i++) Box(f, "HatchSlot", hx - 0.8f + i * 0.4f, f.y + 0.03f, hz, 0.14f, 0.02f, 1.1f, "dark");
         }
+    }
+
+    // ---- Film geometry, room 2 (build zzd): the film's wanted hall, set C, 1:21.5-2:13 (structure sheet
+    // ai-docs/notes/film-geometry/room-02-wanted-hall.md). 1 m = 1.5 units; pieces at the film's across positions
+    // (u) at film size. Solid on the one floor: the floor hatch (a pit drawn on the floor inside a 0.25 m rim, one
+    // collider over the whole hatch: a low obstacle mid-floor, not a route), the jutting wall block with its red
+    // edge (the one piece of cover the film uses) and the vending machine (keeps the display glass that breaks).
+    // Backdrop: the wanted case with its feed line to the ceiling, the red-framed panel round it, the recessed bay
+    // with its hazard sill. Removed under the toggle: three hung posters, two fake back doors with light bars, two
+    // ceiling conduits, two flat floor hatches, the centre display case. Set false to build zzc's wanted hall.
+    const bool FilmRoom2Structures = true;
+    static void FilmWanted(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // 2: red-framed wall panel u 0.08-0.48, 2.9 m tall, strip 0.2 m (floor line, both ends, top)
+        float p0 = u(0.08f), p1 = u(0.48f), ph = 2.9f * m, st = 0.2f * m;
+        Box(f, "WallPanel", (p0 + p1) / 2, f.y + ph / 2, zb - 0.06f, p1 - p0, ph, 0.04f, "panel");
+        Box(f, "PanelFrameFoot", (p0 + p1) / 2, f.y + st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
+        Box(f, "PanelFrameTop", (p0 + p1) / 2, f.y + ph - st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
+        foreach (var x in new[] { p0 + st / 2, p1 - st / 2 }) Box(f, "PanelFrameEnd", x, f.y + ph / 2, zb - 0.1f, st, ph, 0.06f, "red");
+        // 1: the wanted case, 1.3 x 1.6 m, bottom 0.5 m up, 0.2 m proud, lit portrait and a name plate; feed line to the ceiling
+        float cx = u(0.24f), cw = 1.3f * m, chh = 1.6f * m, cb = f.y + 0.5f * m, cd = 0.2f * m;
+        Box(f, "WantedCase", cx, cb + chh / 2, zb - 0.1f - cd / 2, cw, chh, cd, "dark");
+        Box(f, "WantedCaseGlow", cx, cb + chh / 2 + 0.2f, zb - 0.12f - cd, cw - 0.4f, chh - 0.9f, 0.02f, "screen");
+        Box(f, "WantedHead", cx, cb + chh / 2 + 0.3f, zb - 0.14f - cd, 0.6f, 0.75f, 0.02f, "panel");
+        Box(f, "WantedPlate", cx, cb + 0.3f, zb - 0.12f - cd, cw - 0.5f, 0.3f, 0.02f, "white");
+        float lx = cx + cw / 2 - 0.15f, ltop = f.y + 9f;
+        Box(f, "FeedLine", lx, (cb + chh + ltop) / 2, zb - 0.15f, 0.14f, ltop - cb - chh, 0.14f, "red");
+        // 4: jutting wall block at the panel's right end, 0.3 m wide and proud, full height, red edge strip
+        float bw = 0.3f * m, bx = p1 + bw / 2;
+        filmStructures.Add(Box(f, "WallBlock", bx, f.y + 4.5f, zb - bw / 2, bw, 9f, bw, "wall"));
+        Box(f, "WallBlockEdge", bx, f.y + 4.5f, zb - bw - 0.02f, bw, 9f, 0.04f, "red");
+        // 5: recessed bay at u 0.57: dark panel in a red frame, hazard sill 0.45 m up, chamfered red header bar
+        float yx = u(0.57f), yw = 1.6f * m, yh = 2.0f * m, ys = f.y + 0.45f * m;
+        Box(f, "BayPanel", yx, ys + yh / 2, zb - 0.03f, yw, yh, 0.02f, "black");
+        foreach (var x in new[] { yx - yw / 2 - 0.1f, yx + yw / 2 + 0.1f }) Box(f, "BayFrame", x, ys + yh / 2, zb - 0.08f, 0.2f, yh + 0.2f, 0.1f, "red");
+        for (int k = 0; k < 6; k++) Box(f, "BaySill", yx - yw / 2 + (k + 0.5f) * yw / 6, ys - 0.08f, zb - 0.12f, yw / 6, 0.16f, 0.16f, k % 2 == 0 ? "red" : "dark");
+        var hdr = Box(f, "BayHeader", yx, ys + yh + 0.25f, zb - 0.15f, yw + 0.6f, 0.3f, 0.25f, "red");
+        hdr.transform.rotation = Quaternion.Euler(-20f, 0f, 0f);
+        // 6: vending machine at u 0.73, 1.6 x 2.4 x 0.7 m, angled red-trimmed housing; its glass still breaks (JuiceBreakables)
+        float vx = u(0.73f), vw = 1.6f * m, vh = 2.4f * m, vd = 0.7f * m, vz = zb - vd / 2 - 0.05f;
+        filmStructures.Add(Model2(Box(f, "Vending", vx, f.y + vh / 2, vz, vw, vh, vd, "dark"), "nx_vending"));
+        foreach (var s in new[] { -1, 1 })
+        {
+            // angled housing: the trim leans out from the wall, its back kept off the wall seam
+            var trim = Box(f, "VendingTrim", vx + s * (vw / 2 + 0.1f), f.y + vh / 2 + 0.03f, vz - 0.1f, 0.2f, vh, vd - 0.1f, "red");
+            trim.transform.rotation = Quaternion.Euler(0f, s * 8f, 0f);
+        }
+        Box(f, "VendingTop", vx, f.y + vh + 0.1f, vz, vw + 0.4f, 0.2f, vd + 0.1f, "red");
+        float gz = zb - vd - 0.08f;
+        var glass = Box(f, "VendingGlass", vx - 0.2f, f.y + vh * 0.55f, gz, vw - 0.8f, vh * 0.6f, 0.03f, "glass");
+        Box(f, "VendingKeypad", vx + vw / 2 - 0.3f, f.y + vh * 0.55f, gz, 0.3f, 0.5f, 0.02f, "steel");
+        Box(f, "VendingItem", vx - 0.2f, f.y + vh * 0.55f, gz + 0.02f, 0.5f, 0.4f, 0.02f, "white"); // the first aid kit
+        var shards = new List<GameObject> { Box(f, "VendingGlassRim", vx - 0.2f, f.y + vh * 0.82f, gz, vw - 0.8f, 0.2f, 0.03f, "glass") };
+        for (int k = 0; k < 5; k++)
+        {
+            var s = Box(f, "Shard", vx - 0.9f + k * 0.45f, f.y + 0.02f, gz - 0.3f - (k % 3) * 0.25f, 0.3f - (k % 2) * 0.12f, 0.02f, 0.18f, "glass");
+            s.transform.rotation = Quaternion.Euler(0, k * 37f, 0);
+            shards.Add(s);
+        }
+        Breakable(f, "VendingGlass", new Vector3(vx - 0.2f, f.y + vh * 0.55f, gz + 0.2f), new Vector3(vw - 0.8f, vh * 0.6f, 0.4f),
+            new List<GameObject> { glass }, shards, GlassHits, "", GlassBreakSound);
+        // 3: floor hatch at u 0.27, 2 m out: an open pit (drawn) inside a 0.25 m rim, slatted lid lying beside it
+        float hx = u(0.27f), hz = zb - 2.0f * m, hw = 2.3f * m, hd = 1.2f * m, rh = 0.25f * m, rt = 0.15f * m;
+        var hatch = Box(f, "HatchPit", hx, f.y + 0.012f, hz, hw - 2 * rt, 0.02f, hd - 2 * rt, "black");
+        // under Solidify's 0.8 height floor: one collider over the whole hatch, the rim's height (a low obstacle; nobody walks into the pit)
+        var hc = hatch.AddComponent<BoxCollider>();
+        hc.size = new Vector3(hw / (hw - 2 * rt), rh / 0.02f, hd / (hd - 2 * rt)); hc.center = new Vector3(0f, (rh / 2 - 0.012f) / 0.02f, 0f);
+        hatch.layer = ObstacleLayer; solidCount++;
+        filmStructures.Add(hatch);
+        foreach (var s in new[] { -1, 1 })
+        {
+            Box(f, "HatchRim", hx, f.y + rh / 2, hz + s * (hd - rt) / 2, hw, rh, rt, "steel");
+            Box(f, "HatchRim", hx + s * (hw - rt) / 2, f.y + rh / 2, hz, rt, rh, hd - 2 * rt, "steel");
+        }
+        float lx0 = hx + hw / 2 + 0.3f + hw * 0.45f;
+        Box(f, "HatchLid", lx0, f.y + 0.04f, hz, hw * 0.9f, 0.08f, hd * 0.9f, "dark");
+        for (int k = 0; k < 5; k++) Box(f, "HatchLidSlat", lx0 - hw * 0.36f + k * hw * 0.18f, f.y + 0.09f, hz, 0.14f, 0.02f, hd * 0.8f, "steel");
+        // 7, 8: the back doorway and the left-wall door are left out (fake doors stay off; doors unchanged)
     }
 
     // 3: office with a long service counter, a glowing back window and a door marked by a red header.
