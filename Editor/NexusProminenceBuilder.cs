@@ -79,7 +79,7 @@ public static class NexusProminenceBuilder
     [MenuItem("Madness/Templates/Build Nexus Prominence _PG")]
     public static void Build()
     {
-        solidCount = 0; tiledMats.Clear(); uvMeshes.Clear(); modelCount = 0; propMeshes.Clear();
+        solidCount = 0; filmStructures.Clear(); tiledMats.Clear(); uvMeshes.Clear(); modelCount = 0; propMeshes.Clear();
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(SrcScene) == null) { Debug.LogError("NexusProminence: " + SrcScene + " not found; pull SceneTools."); return; }
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(DstScene) != null &&
             !Application.isBatchMode && !EditorUtility.DisplayDialog("Nexus Prominence", DstScene + " exists. Overwrite it?", "Overwrite", "Cancel")) return;
@@ -118,6 +118,7 @@ public static class NexusProminenceBuilder
         // after chaining, so the spawn-only doors are never picked as a room's way in or out
         for (int i = 0; i < built.Count; i++) Encounters(built[i], frames[built[i]], i);
         TileUVs(built);
+        CheckFilmStructures(built);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -512,7 +513,8 @@ public static class NexusProminenceBuilder
                 covers[c].Type = spec.Cover[c];
                 var p = covers[c].transform.position;
                 // Spread through the floor, not one row: the video's rooms have crates and desks out in the open.
-                Vector2 at = spec.CoverAt != null && c < spec.CoverAt.Length ? spec.CoverAt[c]
+                Vector2 at = FilmRoom6Structures && index == 5 && c == 3 ? new Vector2(0.92f, 0.6f) // clear of the near pylon (zw)
+                    : spec.CoverAt != null && c < spec.CoverAt.Length ? spec.CoverAt[c]
                     : new Vector2((c + 1f) / (spec.Cover.Length + 1f), c % 2 == 0 ? 0.35f : 0.65f);
                 var cp = new Vector3(Mathf.Lerp(f.x0 + 1.5f, f.x1 - 1.5f, at.x), p.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, at.y));
                 // keep cover out of doorways (Workshop feedback: cover in front of a door): push it toward the
@@ -644,6 +646,8 @@ public static class NexusProminenceBuilder
         if (index >= Posts.Length || n >= Posts[index].Length) return;
         var p = FilmTotals && FilmTotalPosts[index] != null ? (n < FilmTotalPosts[index].Length ? FilmTotalPosts[index][n] : Posts[index][n]) : Posts[index][n];
         float u = Mathf.Max(0.45f, p.u);
+        // zw: the two engineers stand at the console itself, so the far pylon and the sloped blocks keep clear of them
+        if (FilmRoom6Structures && index == 5 && n < 2) u = n == 0 ? 0.47f : 0.54f;
         go.transform.position = new Vector3(Mathf.Lerp(f.x0 + 1f, f.x1 - 1f, u), go.transform.position.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, p.v));
         var dir = p.face == Face.Entry ? Vector3.left : p.face == Face.Exit ? Vector3.right : p.face == Face.Back ? Vector3.forward : Vector3.back;
         go.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
@@ -1236,24 +1240,156 @@ public static class NexusProminenceBuilder
         Banner(f, f.x1 - 7f, f.y + 3.4f, f.zb - 0.1f, false);
         foreach (var x in new[] { 0.3f, 0.55f, 0.75f }) Box(f, "OilStain", f.x0 + x * f.W, f.y + 0.01f, f.Cz + (x - 0.5f) * 3f, 1.6f, 0.006f, 1.0f, "stain");
         // owner's film frame (2026-11-11): tapered concrete pylons with a red band, a generator set on the back wall
-        Pylon(f, f.x0 + 0.22f * f.W, f.zf + 0.38f * f.D);
-        Pylon(f, f.x0 + 0.46f * f.W, f.zf + 0.30f * f.D);
+        if (FilmRoom6Structures) PillarHall(f);
+        else
+        {
+            Pylon(f, f.x0 + 0.22f * f.W, f.zf + 0.38f * f.D);
+            Pylon(f, f.x0 + 0.46f * f.W, f.zf + 0.30f * f.D);
+        }
         Generator(f, f.x1 - 4.4f, f.zb - 0.95f);
+    }
+
+    // ---- Film geometry, room 6 (build zw): the film's pillar-and-pylon hall, 8:42-9:37 (structure sheet
+    // ai-docs/notes/film-geometry/room-06-shutter-garage.md). Solid pieces on the one floor only: the square
+    // pillar with a sloped barricade touching it on each side, a low barricade out on the floor, two tall
+    // sloped blocks with a red top edge, and the two pylons at film size (far 2.9 m, near 2.3 m). One grunt
+    // (1.8 m) is 2.7 units here, so 1 m = 1.5 units. The stepped platform and its striped steps are left out
+    // until the game's second floor height is researched (prompt C1). Order left to right is the film's
+    // (pillar line, sloped blocks, pylons, generator); the shutter and console sit between pillar and blocks.
+    // The engineers at the console end up between and behind the blocks and the far pylon, where the film
+    // has its soldiers. Set false to build zv's room 6 (two small pylons).
+    const bool FilmRoom6Structures = true;
+    static readonly List<GameObject> filmStructures = new List<GameObject>();
+    static void PillarHall(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        // 1-2: pillar (0.6 m shaft on a 0.75 m plinth with two red bands), clear of the back wall, barricades each side
+        float px = u(0.20f), pz = f.zb - 2.4f;
+        filmStructures.Add(Box(f, "PillarPlinth", px, f.y + 0.53f, pz, 1.15f, 1.05f, 1.15f, "dark"));
+        Box(f, "PillarBand", px, f.y + 0.75f, pz, 1.19f, 0.14f, 1.19f, "red");
+        Box(f, "PillarBand", px, f.y + 0.35f, pz, 1.19f, 0.14f, 1.19f, "red");
+        filmStructures.Add(Box(f, "Pillar", px, f.y + 4.5f, pz, 0.9f, 9.0f, 0.9f, "panel"));
+        foreach (var side in new[] { -1f, 1f })
+            Barricade(f, px + side * (0.575f + 1.0f), pz, 2.0f, 1.2f, 0.75f);
+        // 3: low barricade out on the near floor
+        Barricade(f, u(0.31f), f.zb - 6.0f, 1.35f, 1.05f, 0.7f);
+        // 4: tall sloped blocks right of the console, one near the back wall, one about 4 m out
+        foreach (var d in new[] { 1.9f, 7.2f })
+        {
+            // long front to back, the slope facing left toward the pillar (8:49 frame), red edge along the ridge
+            filmStructures.Add(Wedge(f, "SlopeBlock", u(0.595f), f.y, f.zb - d, 1.35f, 3.3f, 2.4f, 0.3f, "panel", true));
+            Box(f, "SlopeBlockEdge", u(0.595f) + 0.675f - 0.2f, f.y + 3.3f + 0.04f, f.zb - d, 0.44f, 0.1f, 2.44f, "red");
+        }
+        // 8-9: the pylons at film size, far near the back wall, near one in front of it
+        // the pylon body starts on its 0.24 plinth, so Solidify (floor pieces only) never gave zv's pylons a
+        // collider: give the film pylons one over plinth and body, as tall as the body
+        foreach (var py in new[] { Pylon(f, u(0.70f), f.zb - 2.5f, 4.1f, 3.0f, 2.2f), Pylon(f, u(0.765f), f.zb - 7.0f, 3.2f, 2.7f, 2.0f) })
+        {
+            if (py == null) continue;
+            var bc = py.AddComponent<BoxCollider>();
+            bc.center = new Vector3(0f, -0.12f / py.transform.localScale.y, 0f);
+            bc.size = new Vector3(1f, 1f + 0.24f / py.transform.localScale.y, 1f);
+            py.layer = ObstacleLayer; solidCount++;
+            filmStructures.Add(py);
+        }
+    }
+
+    // Low wall with a sloped front face and a red top edge (the film's barricades).
+    static void Barricade(Frame f, float x, float z, float len, float h, float thick)
+    {
+        filmStructures.Add(Wedge(f, "Barricade", x, f.y, z, len, h, thick, 0.45f, "panel"));
+        Box(f, "BarricadeEdge", x, f.y + h + 0.03f, z + thick * 0.275f, len + 0.04f, 0.08f, thick * 0.45f + 0.04f, "red");
+    }
+
+    // A box whose front face (toward the camera, -z) slopes from the full base back to a top of topFrac depth;
+    // the collider stays the base box Solidify gives it, as with Taper.
+    static GameObject Wedge(Frame f, string name, float x, float y0, float z, float sx, float h, float sz, float topFrac, string mat, bool slopeLeft = false)
+    {
+        var g = Box(f, name, x, y0 + h / 2, z, sx, h, sz, mat);
+        g.GetComponent<MeshFilter>().sharedMesh = WedgeMesh(Mathf.Round(topFrac * 100f) / 100f, slopeLeft);
+        return g;
+    }
+
+    static readonly Dictionary<float, Mesh> wedges = new Dictionary<float, Mesh>();
+    static Mesh WedgeMesh(float k, bool left)
+    {
+        float key = left ? -k : k;
+        if (wedges.TryGetValue(key, out var m) && m != null) return m;
+        string tag = (left ? "L" : "") + Mathf.RoundToInt(k * 100);
+        string path = MatDir + "/NX_Wedge_" + tag + ".asset";
+        m = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+        if (m == null)
+        {
+            float zt = 0.5f - k;
+            var bot = new[] { new Vector3(-.5f, -.5f, -.5f), new Vector3(.5f, -.5f, -.5f), new Vector3(.5f, -.5f, .5f), new Vector3(-.5f, -.5f, .5f) };
+            var top = left ? new[] { new Vector3(zt, .5f, -.5f), new Vector3(.5f, .5f, -.5f), new Vector3(.5f, .5f, .5f), new Vector3(zt, .5f, .5f) }
+                : new[] { new Vector3(-.5f, .5f, zt), new Vector3(.5f, .5f, zt), new Vector3(.5f, .5f, .5f), new Vector3(-.5f, .5f, .5f) };
+            var v = new List<Vector3>(); var tri = new List<int>();
+            void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d) { int i = v.Count; v.Add(a); v.Add(b); v.Add(c); v.Add(d); tri.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 }); }
+            for (int i = 0; i < 4; i++) { int j = (i + 1) % 4; Quad(bot[i], top[i], top[j], bot[j]); }
+            Quad(top[0], top[3], top[2], top[1]);
+            Quad(bot[0], bot[1], bot[2], bot[3]);
+            m = new Mesh { name = "NX_Wedge_" + tag };
+            m.SetVertices(v); m.SetTriangles(tri, 0);
+            m.uv = v.Select(q => new Vector2(q.x + .5f, q.y + .5f)).ToArray();
+            m.RecalculateNormals(); m.RecalculateBounds();
+            AssetDatabase.CreateAsset(m, path);
+        }
+        wedges[key] = m;
+        return m;
+    }
+
+    // Gate log for the film structures (prompt C4): no structure within 3.5 units of a door, every enemy, cover
+    // point and the player start at least 1.2 units clear of every structure's footprint, and an open band at
+    // least 6 units deep in front of them from wall to wall (the route). Prints NX_STRUCT lines.
+    static void CheckFilmStructures(List<RoomObj> built)
+    {
+        foreach (var room in built)
+        {
+            var mine = filmStructures.Where(g => g != null && g.transform.IsChildOf(room.transform)).ToList();
+            if (mine.Count == 0) continue;
+            var f = frames[room]; int bad = 0;
+            var chars = room.GetComponentsInChildren<Marker_Character>(true).Select(c => c.transform.position).ToList();
+            var feet = room.GetComponentsInChildren<Marker_Character>(true).Select(c => new KeyValuePair<string, Vector3>(c.name, c.transform.position))
+                .Concat(room.GetComponentsInChildren<ProxyObj_Cover>(true).Select(c => new KeyValuePair<string, Vector3>(c.name, c.transform.position))).ToList();
+            foreach (var g in mine)
+            {
+                var b = g.GetComponent<Renderer>().bounds;
+                Debug.Log("NX_STRUCT " + room.name + " " + g.name + " h " + (b.size.y / 2.7f).ToString("0.00") + " at x " + (b.center.x - f.x0).ToString("0.0")
+                    + " out " + (f.zb - b.center.z).ToString("0.0") + " solid " + (g.GetComponent<Collider>() != null));
+                foreach (var d in f.Doors)
+                {
+                    var gap = new Vector2(Mathf.Max(0f, Mathf.Max(b.min.x - d.x, d.x - b.max.x)), Mathf.Max(0f, Mathf.Max(b.min.z - d.z, d.z - b.max.z)));
+                    if (gap.magnitude < 3.5f) { bad++; Debug.Log("NX_STRUCT_BLOCK door " + room.name + " " + g.name + " near door at " + d); }
+                }
+                var e = b; e.Expand(new Vector3(2.4f, 0f, 2.4f)); // a cover proxy's own footprint plus a step
+                var ec = b; ec.Expand(new Vector3(1.2f, 0f, 1.2f)); // a character's width plus a step
+                foreach (var c in chars)
+                    if (c.x > ec.min.x && c.x < ec.max.x && c.z > ec.min.z && c.z < ec.max.z) { bad++; Debug.Log("NX_STRUCT_BLOCK floor " + room.name + " " + g.name + " x enemy at " + c); }
+                foreach (var p in feet.Where(q => q.Key.StartsWith("PX_Cover")))
+                    if (p.Value.x > e.min.x && p.Value.x < e.max.x && p.Value.z > e.min.z && p.Value.z < e.max.z) { bad++; Debug.Log("NX_STRUCT_BLOCK floor " + room.name + " " + g.name + " x " + p.Key); }
+            }
+            float front = mine.Min(g => g.GetComponent<Renderer>().bounds.min.z) - FloorBounds(room).min.z;
+            if (front < 6f) { bad++; Debug.Log("NX_STRUCT_BLOCK route " + room.name + " open depth " + front.ToString("0.0")); }
+            Debug.Log("NX_STRUCT_GATE " + room.name + " structures " + mine.Count + " enemies " + chars.Count + " covers " + feet.Count(q => q.Key.StartsWith("PX_Cover")) + " blocks " + bad + " open front depth " + front.ToString("0.0"));
+        }
     }
 
     // Tapered concrete pylon (the film's checkpoint blocks): one sloped body on a plinth, a red band and white stripe
     // that follow the slope, a dark cap. Owner asked for real pylons (2026-11-11 play): the four stacked boxes read as crates.
-    static void Pylon(Frame f, float x, float z)
+    static void Pylon(Frame f, float x, float z) { Pylon(f, x, z, 2.6f, 1.7f, 0.8f); }
+    static GameObject Pylon(Frame f, float x, float z, float H, float wb, float wt)
     {
-        if (f.Doors.Any(d => Mathf.Abs(d.x - x) < 2.5f && Mathf.Abs(d.z - z) < 2.5f)) return;
-        Box(f, "Pylon", x, f.y + 0.12f, z, 1.9f, 0.24f, 1.9f, "dark");
-        float y0 = f.y + 0.24f, H = 2.6f, wb = 1.7f, wt = 0.8f;
-        Taper(f, "PylonTier", x, y0, z, wb, wt, H, "panel");
+        if (f.Doors.Any(d => Mathf.Abs(d.x - x) < 2.5f && Mathf.Abs(d.z - z) < 2.5f)) return null;
+        Box(f, "Pylon", x, f.y + 0.12f, z, wb + 0.2f, 0.24f, wb + 0.2f, "dark");
+        float y0 = f.y + 0.24f, k = H / 2.6f;
+        var body = Taper(f, "PylonTier", x, y0, z, wb, wt, H, "panel");
         // bands sit a hair proud of the slope at their own height
-        Taper(f, "PylonTier", x, y0 + 0.55f, z, W(wb, wt, H, 0.55f) + 0.04f, W(wb, wt, H, 1.15f) + 0.04f, 0.6f, "red");
-        Taper(f, "PylonTier", x, y0 + 1.25f, z, W(wb, wt, H, 1.25f) + 0.04f, W(wb, wt, H, 1.4f) + 0.04f, 0.15f, "white");
+        Taper(f, "PylonTier", x, y0 + 0.55f * k, z, W(wb, wt, H, 0.55f * k) + 0.04f, W(wb, wt, H, 1.15f * k) + 0.04f, 0.6f * k, "red");
+        Taper(f, "PylonTier", x, y0 + 1.25f * k, z, W(wb, wt, H, 1.25f * k) + 0.04f, W(wb, wt, H, 1.4f * k) + 0.04f, 0.15f * k, "white");
         Box(f, "PylonCap", x, y0 + H + 0.06f, z, wt + 0.1f, 0.12f, wt + 0.1f, "dark");
         Box(f, "PylonTier", x, y0 + H + 0.2f, z, 0.25f, 0.16f, 0.25f, "steel");
+        return body;
     }
 
     static float W(float wb, float wt, float H, float h) { return Mathf.Lerp(wb, wt, h / H); }
@@ -1620,7 +1756,7 @@ public static class NexusProminenceBuilder
     static readonly string[] Strips = { "Pipe_Back", "Skirt", "PanelRail", "SkyStripFrame" };
     static readonly string[] Filler = { "Pilaster", "PipeClamp", "Conduit", "BandStripe", "DiagStripe", "PanelSeam", "WallPanelStripes", "FloorSeam", "Grate", "Paper", "Stain", "OilStain" };
     static readonly string[] Features = { "Door", "Window", "LitWin", "Poster", "Case", "Sign", "Banner", "Board", "Slate", "Shutter", "Vending",
-        "Notice", "Locker", "Menu", "Bill", "Vent", "Fridge", "Cabinet", "Rack", "Console", "Monitor", "Lamp", "Ledge", "Counter", "Pylon", "Generator", "GasCan", "HazardSign", "Toolbox", "Hatch", "Crate", "Desk", "Table", "Bench", "Ladder" };
+        "Notice", "Locker", "Menu", "Bill", "Vent", "Fridge", "Cabinet", "Rack", "Console", "Monitor", "Lamp", "Ledge", "Counter", "Pylon", "Pillar", "Barricade", "SlopeBlock", "Generator", "GasCan", "HazardSign", "Toolbox", "Hatch", "Crate", "Desk", "Table", "Bench", "Ladder" };
     static string Family(string name, string[] keys)
     {
         string n = name.StartsWith("NX_") ? name.Substring(3) : name;
