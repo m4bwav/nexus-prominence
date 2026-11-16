@@ -1965,6 +1965,7 @@ public static class NexusProminenceBuilder
     // 9: break room: serving counter under a row of glowing menu panels, tables, a drum.
     static void BreakRoom(Frame f)
     {
+        if (FilmRoom9Structures) { FilmCanteen(f); return; }
         float cx = f.Cx + 2f;
         Box(f, "ServeCounter", cx, f.y + 0.7f, f.zb - 1.0f, 10f, 1.4f, 1.4f, "panel"); // round 5 judge kept the zn box here
         Box(f, "ServeTop", cx, f.y + 1.45f, f.zb - 1.0f, 10.3f, 0.1f, 1.6f, "dark");
@@ -1984,6 +1985,53 @@ public static class NexusProminenceBuilder
         Box(f, "VendingFace", f.x1 - 4.2f, f.y + 2.3f, f.zb - 1.32f, 1.2f, 2.4f, 0.03f, "screen");
         Banner(f, f.x0 + 1.9f, f.y + 3.4f, f.zb - 0.1f, false);
     }
+
+    // ---- Film geometry, room 9 (build zzg): the film's canteen, set A, 10:14-10:33.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-09-break-room.md). 1 m = 1.5 units. Solid on the one floor: the serving
+    // counter (4.5 m long, 1.0 m tall, 1.0 m deep, 0.2 m off the wall, u 0.62-0.84 on its red plinth) is the room's
+    // firing post; the wall jog right of the back doorway (0.4 m proud); the taped carton out on the floor (low cover).
+    // Backdrop: the serving hatch over the counter with the menu board, the round red light, the back doorway's deep
+    // red-jambed frame with a closed panel, the bin. Left out: the raised walkway along the back wall (a route: the
+    // chain's one walkable proof, room 4's deck, waits on its play before a second, prompt C1), the corridor mouth
+    // at u 0.05-0.22 and the doorway as an opening (fake doors off), the right-wall door (doors unchanged), set B's
+    // barrels, table and posters. Removed under the toggle: centre counter, menu panels, table, drum, slate, fridge,
+    // vending machine, banner (not in set A). Set false to build zzf's break room.
+    const bool FilmRoom9Structures = true;
+    static void FilmCanteen(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // A4: serving counter, top 1.0 m, 1.0 m deep, 0.2 m off the wall; ends 3.5 units clear of the right-wall door
+        float c0 = u(0.62f), c1 = c0 + 4.5f * m, ch = 1.0f * m, cd = 1.0f * m, cz = zb - 0.2f * m - cd / 2;
+        var counter = Box(f, "ServeCounter", (c0 + c1) / 2, f.y + ch / 2, cz, c1 - c0, ch, cd, "panel");
+        if (counter.GetComponent<BoxCollider>() == null) { counter.AddComponent<BoxCollider>(); counter.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(counter);
+        Box(f, "ServeTop", (c0 + c1) / 2, f.y + ch + 0.05f, cz, c1 - c0 + 0.2f, 0.1f, cd + 0.15f, "dark");
+        Box(f, "ServePlinth", (c0 + c1) / 2, f.y + 0.25f, zb - 0.2f * m - cd - 0.02f, c1 - c0, 0.5f, 0.02f, "red");
+        for (int k = 0; k < 3; k++) Cyl(f, "Cup", c0 + 1.5f + k * 1.6f, f.y + ch + 0.25f, cz, 0.25f, 0.35f, k == 1 ? "red" : "white");
+        // A5: serving hatch u 0.62-0.95 (3.6 x 1.6 m) over the counter, menu board on its right; A6: round red light at u 0.80
+        float hx = (c0 + c1) / 2, hw = 3.6f * m * 0.8f, hy = f.y + ch + 0.6f + 0.8f * m;
+        Box(f, "HatchOpening", hx - 0.6f, hy, zb - 0.03f, hw, 1.6f * m, 0.02f, "black");
+        Box(f, "HatchFrameTop", hx - 0.6f, hy + 0.8f * m + 0.1f, zb - 0.1f, hw + 0.3f, 0.2f, 0.12f, "dark");
+        Box(f, "HatchFrameFoot", hx - 0.6f, hy - 0.8f * m - 0.1f, zb - 0.1f, hw + 0.3f, 0.2f, 0.12f, "dark");
+        Box(f, "MenuPanel", c1 + 0.2f, hy, zb - 0.1f, 1.6f, 2.0f, 0.06f, "screen");
+        Cyl(f, "RedLight", u(0.80f), hy + 0.8f * m + 1.0f, zb - 0.1f, 0.7f * m, 0.12f, "screen");
+        // A2: back doorway u 0.30-0.48 in a deep frame with red jambs, 0.4 m proud, shown closed (fake doors off)
+        float dx = u(0.39f), dw = 1.6f * m, dh = 2.4f * m, pr = 0.4f * m;
+        foreach (var sx in new[] { -1, 1 }) Box(f, "DoorJamb", dx + sx * (dw / 2 + 0.15f), f.y + dh / 2 + 0.05f, zb - pr / 2, 0.3f, dh, pr, "red");
+        Box(f, "DoorHeaderBlock", dx, f.y + dh + 0.35f, zb - pr / 2, dw + 0.6f, 0.5f, pr, "wall");
+        Box(f, "DoorPanelClosed", dx, f.y + dh / 2 + 0.05f, zb - 0.06f, dw, dh, 0.04f, "dark");
+        // A7: wall jog right of the doorway, u 0.48-0.60 (1.1 m wide), 0.4 m proud, full height, the band bending round it
+        float jx = u(0.48f) + 0.55f * m + 0.3f;
+        filmStructures.Add(Box(f, "WallJog", jx, f.y + 4.5f, zb - pr / 2, 1.1f * m, 9f, pr, "wall"));
+        Box(f, "WallJogBand", jx, f.y + 0.55f * 2.7f, zb - pr / 2, 1.1f * m + 0.06f, 0.45f * m, pr + 0.06f, "red");
+        // A10: taped carton out on the near left floor (low cover), a bin by the doorway
+        float tx = u(CartonU), tz = zb - CartonOut * m, ts = 1.1f * m;
+        filmStructures.Add(Box(f, "Carton", tx, f.y + ts / 2, tz, ts, ts, ts * 0.8f, "panel"));
+        Box(f, "CartonTape", tx, f.y + ts / 2, tz, 0.2f, ts + 0.02f, ts * 0.8f + 0.02f, "steel");
+        Cyl(f, "Bin", u(0.55f) - 1.6f, f.y + 0.45f * m, zb - 0.8f * m - 0.8f, 0.6f * m, 0.9f * m, "steel");
+    }
+    const float CartonU = 0.15f, CartonOut = 5f;
 
     // 10: control tower: a wall of red monitors above a long desk, server racks at the sides.
     static void ControlTower(Frame f)
