@@ -71,6 +71,8 @@ Sets per room are in the generator (`Street`, `WantedHall`, ...); the Workshop d
 | 9 | Break room | 3 agents, 1 support, 1 scientist | combat | Med cabinet | R_NS-V.10 | Hard |
 | 10 | Control tower | 2 soldats, 2 riot guards, 1 engineer, 2 agents | combat | Med cabinet, ammo, grenade ammo | R_Hrifle_NFAL | Very hard |
 
+Where each room is in the film: [ai-docs/notes/film-geometry/film-room-map.md](ai-docs/notes/film-geometry/film-room-map.md) gives each room's film set and time range (read frame by frame on 2026-11-15), the nearby sets that are not that room, and how its enemies arrive. Several first guesses were wrong: the garage follows the pillar-and-pylon hall at 8:42-9:37, the sniper loft is at 5:51-6:19, and the control tower is the film's last room, an admin room at 10:34-11:01. The room-by-room structure sheets sit beside it.
+
 Player start stays in room 1; the Playground control room is left out (toggle `PlaygroundControlRoom`). Weapons follow the film (`Loadout` in the generator, the game's own card names): rifles at the street checkpoint, pistols and SMGs in the hall, riot guards with `Shield_RiotLight` and a pistol, soldats with `R_Hrifle_NFAL`, scouts and a few later agents with `M_SwordNexus`; support, engineers and scientists keep their defaults. Wall signs and splats find a clear patch of wall (`CollectWallBusy`) or are dropped with a `no clear wall` log line. The Workshop preview comes from `tools/make_preview.py` over the room shots.
 
 ## Use it

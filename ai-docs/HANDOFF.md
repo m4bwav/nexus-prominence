@@ -7,11 +7,12 @@ Live chain: film geometry and arrivals. Prompt: [plans/2026-11-15-film-geometry-
 Status: open. Set up 2026-11-15; nothing studied or built yet.
 
 - The ask (2026-11-15): the owner sees ramps, steps, higher areas and pillars in the film that the rooms do not show, and wants a closer inspection and rooms close to the film. A player also reported that the backup is only met when walking back through finished rooms and that the level can be finished without seeing any. Both are quoted in the brief.
-- The owner's five screenshots are in the lab's `frames/` folder as `owner-2026-11-15-*.png` (8:49 pillar and sloped blocks, garage pylons and generator, garage wide with floor edges, admin room, sniper balcony with ladder). The brief holds a first reading of each; the room each belongs to is still a guess.
+- The owner's five screenshots are in the lab's `frames/` folder as `owner-2026-11-15-*.png`. Placed in the film on 2026-11-15: three are the pillar-and-pylon hall (room 6, 8:49, 9:02, 9:13), the balcony is the sniper loft (room 5, 6:03), the admin room is the film's last room (room 10, 10:47). The brief's first guesses for the 8:49 shot and the admin room were wrong.
 - Build players have now: zu (Workshop item 3837705778, released 2026-11-14). Next build letter: zv.
-- Next: the reinforcements (prompt, part A): find the cause first. Leads are in the brief; no cause is written down yet.
+- Next: the reinforcements (prompt, part A): a subagent is on it (2026-11-15); cause not yet written down here.
 - Reinforcement fix: no build yet. When there is one, name it here; it stays the deployed build until the owner has played it.
-- Structure sheets (prompt, part B): none yet. Rooms built (part C): none. How the game treats a floor at a second height: not yet researched.
+- Structure sheets (prompt, part B): done 2026-11-15 for all ten rooms plus the film's generator room, in [notes/film-geometry/](notes/film-geometry/). Which film set and time range is each room: [notes/film-geometry/film-room-map.md](notes/film-geometry/film-room-map.md) (the owner asked for this table so rooms are not guessed). Rooms 4 and 7 were read from contact sheets only, sizes rough. Open questions from the studies: room 3 shows about 10 enemies and room 8 about 10 in the film, against 3 each on the map and the older film table below; that table needs re-reading against the new spans before counts change. Build order from the sheets: rooms in the owner's screenshots first (6 pillar hall, 5 loft, 10 admin room), then the widest gaps (8 steps and spotlights, 4 raised deck, 1 window sill).
+- Rooms built (part C): none. How the game treats a floor at a second height: not yet researched.
 - Askwright set for this chain: none yet. First question to put on it: may a session start the game itself to time the backup (the grant below says no)?
 - Waits on the owner: nothing yet.
 - Owner's test list: empty.
