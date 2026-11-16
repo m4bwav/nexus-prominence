@@ -752,6 +752,7 @@ public static class NexusProminenceBuilder
         switch (index)
         {
             case 0: // checkpoint boom barrier folded against the back wall, red and white
+                if (FilmRoom1Structures) break; // zzb: the film's sill runs where the boom stood, and the film has no boom
                 Box(f, "BoomPost", f.x0 + 2.2f, f.y + 0.7f, f.zb - 0.5f, 0.3f, 1.4f, 0.3f, "dark");
                 for (int k = 0; k < 6; k++) Box(f, "BoomArm", f.x0 + 2.6f + k * 0.5f, f.y + 1.2f, f.zb - 0.5f, 0.5f, 0.16f, 0.12f, k % 2 == 0 ? "red" : "white");
                 break;
@@ -1033,7 +1034,7 @@ public static class NexusProminenceBuilder
                 0.6f + (float)rng.NextDouble() * 1.8f, 0.006f, 0.4f + (float)rng.NextDouble() * 1.2f, "stain");
 
         // back: one window almost wall to wall
-        float wx0 = f.x0 + 1.4f, wx1 = f.x1 - 1.4f, wy0 = f.y + 1.4f, wy1 = f.y + 6.8f, wz = f.zb - 0.05f;
+        float wx0 = FilmRoom1Structures ? f.x0 + 0.09f * f.W : f.x0 + 1.4f, wx1 = FilmRoom1Structures ? f.x0 + 0.79f * f.W : f.x1 - 1.4f, wy0 = f.y + 1.4f, wy1 = f.y + 6.8f, wz = f.zb - 0.05f;
         Box(f, "Window_Sky", (wx0 + wx1) / 2, (wy0 + wy1) / 2, wz, wx1 - wx0, wy1 - wy0, 0.04f, "sky");
         for (float x = wx0 + 0.2f; x < wx1 - 0.6f; )
         {
@@ -1054,10 +1055,14 @@ public static class NexusProminenceBuilder
         Box(f, "Window_Head", (wx0 + wx1) / 2, wy1 + 0.3f, f.zb - 0.3f, wx1 - wx0 + 0.8f, 0.6f, 0.6f, "dark");
         Box(f, "Window_SideA", wx0 - 0.2f, (wy0 + wy1) / 2, f.zb - 0.3f, 0.5f, wy1 - wy0, 0.6f, "dark");
         Box(f, "Window_SideB", wx1 + 0.2f, (wy0 + wy1) / 2, f.zb - 0.3f, 0.5f, wy1 - wy0, 0.6f, "dark");
-        Box(f, "Window_Sill", (wx0 + wx1) / 2, wy0 + 0.1f, f.zb - 0.35f, wx1 - wx0, 0.2f, 0.6f, "dark");
-        Box(f, "Window_Glow", (wx0 + wx1) / 2, wy0 - 0.5f, f.zb - 0.1f, wx1 - wx0, 1.0f, 0.04f, "screen");
+        if (FilmRoom1Structures) FilmCheckpoint(f, wx0, wx1, wy0);
+        else
+        {
+            Box(f, "Window_Sill", (wx0 + wx1) / 2, wy0 + 0.1f, f.zb - 0.35f, wx1 - wx0, 0.2f, 0.6f, "dark");
+            Box(f, "Window_Glow", (wx0 + wx1) / 2, wy0 - 0.5f, f.zb - 0.1f, wx1 - wx0, 1.0f, 0.04f, "screen");
+        }
         // hung, cracked sign in the middle of the window
-        float sx = (wx0 + wx1) / 2;
+        float sx = FilmRoom1Structures ? f.x0 + 0.42f * f.W : (wx0 + wx1) / 2;
         // (pulled back to the window plane: Workshop feedback said the outdoors reached into the room)
         Box(f, "SignRodA", sx - 1.2f, wy1 + 0.2f, f.zb - 0.45f, 0.12f, 1.2f, 0.12f, "dark");
         Box(f, "SignRodB", sx + 1.2f, wy1 + 0.2f, f.zb - 0.45f, 0.12f, 1.2f, 0.12f, "dark");
@@ -1094,6 +1099,39 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < 3; i++) Cyl(f, "Cup", f.x1 - 2.4f + i * 0.28f, f.y + 0.13f, f.zb - 1.9f - (i % 2) * 0.2f, 0.18f, 0.26f, "white");
         for (float x = f.x0 + 2f; x < f.x1 - 1f; x += 3.2f)
             Box(f, "PanelSeam", x, f.y + 7.5f, f.zb - 0.02f, 0.06f, 0.8f, 0.02f, "dark");
+    }
+
+    // ---- Film geometry, room 1 (build zzb): the film's street-front bay, 0:17-0:41.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-01-street-checkpoint.md). 1 m = 1.5 units. The window narrows to the
+    // film's u 0.09-0.79 with wall each side. Solid on the one floor: the window sill as a low wall (top at
+    // 0.9 m, 0.4 m deep, red-lit face below the ledge; the room behind it is outside, so it changes looks,
+    // not routes), the right pilaster (u 0.79-0.88, 0.5 m proud), the left wall block and counter
+    // are left out (they would stand by the left-wall door). The hung sign moves to the film's
+    // u 0.42 (Street). Set false to build zza's room 1 (window wall to wall, thin sill at the glass).
+    const bool FilmRoom1Structures = true;
+    static void FilmCheckpoint(Frame f, float wx0, float wx1, float wy0)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, sh = 0.9f * m, sd = 0.4f * m, sz = f.zb - sd / 2 - 0.05f;
+        // 2: sill: a dark ledge 0.2 m thick on a low wall with a red-lit face, the whole window width
+        // the sill starts 0.5 in from the glass edge (3.5 units clear of the left-wall door) and stops short of the side frame
+        float s0 = wx0 + 0.5f, s1 = wx1 - 0.1f;
+        var sill = Box(f, "SillWall", (s0 + s1) / 2, f.y + (sh - 0.2f * m) / 2, sz, s1 - s0, sh - 0.2f * m, sd, "dark");
+        // wider than Solidify's wall-facing limit, so it gets its own collider: shots stop at it as in the film
+        if (sill.GetComponent<BoxCollider>() == null) { sill.AddComponent<BoxCollider>(); sill.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(sill);
+        Box(f, "SillLedge", (s0 + s1) / 2, f.y + sh - 0.1f * m, sz - 0.05f, s1 - s0, 0.2f * m, sd + 0.1f, "black");
+        Box(f, "SillGlow", (s0 + s1) / 2, f.y + (sh - 0.2f * m) / 2, f.zb - sd - 0.07f, s1 - s0 - 0.3f, sh - 0.2f * m - 0.3f, 0.02f, "screen");
+        // the skyline glass starts at the ledge: fill the gap between ledge and the old window bottom with dark wall
+        if (wy0 > f.y + sh) Box(f, "SillBack", (wx0 + wx1) / 2, (f.y + sh + wy0) / 2, f.zb - 0.06f, wx1 - wx0, wy0 - f.y - sh, 0.04f, "wall");
+        // 7: right pilaster, floor to ceiling, the red skirting wrapping it
+        float px0 = wx1 + 0.5f, px1 = u(0.88f), pd = 0.5f * m;
+        filmStructures.Add(Box(f, "CornerPilaster", (px0 + px1) / 2, f.y + 4.5f, f.zb - pd / 2, px1 - px0, 9f, pd, "wall"));
+        Box(f, "CornerPilasterSkirt", (px0 + px1) / 2, f.y + 0.2f * m, f.zb - pd / 2, px1 - px0 + 0.06f, 0.35f * m, pd + 0.06f, "red");
+        // right of the pilaster to the side wall: plain wall over the old glass
+        Box(f, "WallRight", (px1 + f.x1) / 2, f.y + 4.5f, f.zb - 0.04f, f.x1 - px1, 9f, 0.04f, "wall");
+        // 6: the left wall block and its counter are left out: the left-wall door stands 3.3 units out from the
+        // back wall and both would sit within the door gate's 3.5 units (zzb first pass)
     }
 
     // 2: red-lit hall (video 1:28-2:00): wanted posters in red frames hung on rods, a glass display case of
