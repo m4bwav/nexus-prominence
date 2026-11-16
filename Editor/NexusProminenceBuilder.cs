@@ -1602,6 +1602,7 @@ public static class NexusProminenceBuilder
     // 10: control tower: a wall of red monitors above a long desk, server racks at the sides.
     static void ControlTower(Frame f)
     {
+        if (FilmRoom10Structures) { AdminRoom(f); return; }
         for (int r = 0; r < 3; r++)
             for (int c = 0; c < 6; c++)
             {
@@ -1628,6 +1629,69 @@ public static class NexusProminenceBuilder
         Box(f, "SkyStripFrame", f.Cx, f.y + 6.1f, f.zb - 0.12f, f.W - 2f, 0.12f, 0.12f, "dark");
         Banner(f, f.Cx - 9f, f.y + 3.6f, f.zb - 0.1f, false);
         Banner(f, f.Cx + 9f, f.y + 3.6f, f.zb - 0.1f, false);
+        BackDoorway(f, f.x1 - 6.5f);
+    }
+
+    // ---- Film geometry, room 10 (build zy): the film's admin room, 10:34-11:01 (structure sheet
+    // ai-docs/notes/film-geometry/room-10-control-tower.md, owner frame 10:47). 1 m = 1.5 units, as in zw.
+    // The map room is wider than the film's 15 m, so pieces keep the film's left-to-right order at film size
+    // and the extra floor stays bare (sheet note). Solid on the one floor: the hooded console (u 0.285), the
+    // narrow cabinet beside it, the low bench (u 0.57) and the tower unit (u 0.74). Backdrop: the recessed
+    // panel with its diagonal trim, the left pilaster, the two screens hung from ceiling mounts (breakable,
+    // as zw's monitors were), the tall red light panel, a floor mat under the bench, a lit sign over the
+    // right-wall door. The monitor wall, desk, racks, sky strip and banners are not in the film set.
+    // Set false to build zx's control tower.
+    const bool FilmRoom10Structures = true;
+    static void AdminRoom(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f;
+        // 1: recessed back-wall panel, 3.6 x 3.4 m, with a stepped diagonal red trim on its left edge
+        float rx = u(0.20f);
+        Box(f, "RecessPanel", rx, f.y + 1.7f * m + 0.6f, f.zb - 0.06f, 3.6f * m, 3.4f * m, 0.04f, "dark");
+        var trim = Box(f, "RecessTrim", rx - 1.4f * m, f.y + 1.7f * m + 0.6f, f.zb - 0.1f, 0.18f, 3.0f * m, 0.03f, "red");
+        trim.transform.rotation = Quaternion.Euler(0f, 0f, -20f);
+        // 2: left pilaster at the back corner, full height
+        Box(f, "Pilaster", f.x0 + 0.25f, f.y + 4.5f, f.zb - 0.4f, 0.5f, 9f, 0.75f, "panel");
+        // 3: hooded console against the back wall, 1.8 x 2.5 x 0.8 m: body, sloped hood, red screen, box on top
+        float cx = u(0.285f), cd = 0.8f * m, cz = f.zb - cd / 2 - 0.05f;
+        filmStructures.Add(Box(f, "AdminConsole", cx, f.y + 1.0f * m, cz, 1.8f * m, 2.0f * m, cd, "panel"));
+        Wedge(f, "ConsoleHood", cx, f.y + 2.0f * m, cz, 1.8f * m, 0.5f * m, cd, 0.35f, "dark");
+        Box(f, "ConsoleScreen", cx, f.y + 1.45f * m, f.zb - cd - 0.07f, 1.3f * m, 0.6f * m, 0.03f, "screen");
+        Box(f, "ConsoleTopBox", cx + 0.5f * m, f.y + 2.5f * m + 0.2f, cz + 0.2f, 0.4f * m, 0.3f * m, 0.3f * m, "black");
+        // 4: narrow cabinet right of it
+        filmStructures.Add(Box(f, "NarrowCabinet", cx + 0.9f * m + 0.3f, f.y + 0.9f * m, f.zb - 0.3f * m - 0.05f, 0.3f * m, 1.8f * m, 0.6f * m, "steel"));
+        // 5: two screens hung from ceiling mounts, 1.4 x 1.0 m, bottom edge at 2.2 m; they break as zw's monitors did
+        foreach (var (a, face) in new[] { (0.45f, "screen"), (0.615f, "lit") })
+        {
+            float sx = u(a), sy = f.y + 2.2f * m + 0.5f * m, sz = f.zb - 0.3f * m - 0.1f;
+            Box(f, "ScreenMount", sx, sy + 0.5f * m + 0.45f * m + 0.15f, sz, 0.12f, 0.9f * m, 0.12f, "dark");
+            var cas = Box(f, "HungScreenCase", sx, sy, sz, 1.4f * m + 0.15f, 1.0f * m + 0.15f, 0.2f, "black");
+            var scr = Box(f, "HungScreen", sx, sy, sz - 0.12f, 1.4f * m, 1.0f * m, 0.02f, face);
+            var dead = Box(f, "HungScreenDead", sx, sy, sz - 0.12f, 1.4f * m, 1.0f * m, 0.02f, "black");
+            var crack = Box(f, "HungScreenCrack", sx, sy, sz - 0.14f, 1.6f, 0.04f, 0.01f, "steel");
+            crack.transform.rotation = Quaternion.Euler(0f, 0f, 25f); // hung flat, not tilted: a tilt crossed the case (overlap scan)
+            Breakable(f, "HungScreen" + a, new Vector3(sx, sy, sz - 0.1f), new Vector3(1.4f * m, 1.0f * m, 0.2f),
+                new List<GameObject> { scr }, new List<GameObject> { dead, crack }, MonitorHits, MonitorHitSound, MonitorBreakSound, MonitorExplosion);
+        }
+        // 6: tall red light panel, 0.65 x 3.1 m, bottom at 1.0 m
+        float lx = u(0.735f), ly = f.y + 1.0f * m + 1.55f * m;
+        Box(f, "RedPanelFrame", lx, ly, f.zb - 0.08f, 0.65f * m + 0.3f, 3.1f * m + 0.3f, 0.08f, "dark");
+        Box(f, "RedPanel", lx, ly, f.zb - 0.14f, 0.65f * m, 3.1f * m, 0.03f, "screen");
+        // 7: low bench, 2.9 x 0.7 x 0.6 m, on a floor mat (a mat, not a step: the sheet's reading)
+        float bx = u(0.57f), bz = f.zb - 0.6f * m - 0.2f;
+        Box(f, "BenchMat", u(0.67f), f.y + 0.006f, f.zb - 1.65f * m, 7.8f * m, 0.008f, 2.7f * m, "dark");
+        filmStructures.Add(Box(f, "AdminBench", bx, f.y + 0.35f * m, bz, 2.9f * m, 0.7f * m, 0.6f * m, "panel"));
+        Box(f, "AdminBenchLid", bx, f.y + 0.7f * m + 0.04f, bz, 2.9f * m + 0.08f, 0.08f, 0.6f * m + 0.08f, "dark");
+        // 8: tower unit right of the bench
+        filmStructures.Add(Box(f, "TowerUnit", u(0.70f), f.y + 0.45f * m, f.zb - 0.4f * m - 0.2f, 0.75f * m, 0.9f * m, 0.5f * m, "black"));
+        // 9: lit sign over the right-wall door (the late pair's way in)
+        var rd = f.Doors.Where(d => d.x > f.x1 - 3f).OrderByDescending(d => d.z).ToList();
+        if (rd.Count > 0) Box(f, "AdminSign", f.x1 - 0.12f, f.y + 6.2f, rd[0].z, 0.06f, 0.35f * m, 1.1f * m, "lit");
+        // 13: bin by the right wall, a knocked wet-floor sign mid-floor
+        Cyl(f, "Bin", u(0.88f), f.y + 0.4f * m, f.zb - 2.5f * m, 0.5f * m, 0.75f * m, "steel");
+        var wet = Box(f, "WetSign", u(0.56f), f.y + 0.06f, f.zb - 2.5f * m, 0.5f * m, 0.08f, 0.8f * m, "white");
+        wet.transform.rotation = Quaternion.Euler(0f, 30f, 0f);
         BackDoorway(f, f.x1 - 6.5f);
     }
 

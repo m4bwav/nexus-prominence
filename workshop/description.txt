@@ -13,7 +13,7 @@ Every room is a different fight, staged from the film: an ambush on two guards w
 [tr][td]7[/td][td]Spotlight corridor[/td][td]Long, narrow, red spotlights, little cover[/td][td]2 agents down the corridor, a riot guard blocking the middle, 2 more step out of the side doors (combat)[/td][td]Hard[/td][/tr]
 [tr][td]8[/td][td]Locker room[/td][td]Tight room, lockers[/td][td]1 riot guard steps up, 2 agents come at you (combat)[/td][td]Medium[/td][/tr]
 [tr][td]9[/td][td]Break room[/td][td]Tables, counter, menu board[/td][td]2 agents, 1 support, 1 scientist on break (unaware)[/td][td]Hard[/td][/tr]
-[tr][td]10[/td][td]Control tower[/td][td]Monitor wall, server racks[/td][td]2 soldats holding the far desks, 1 riot guard, 1 engineer, then one more soldat through the door (combat)[/td][td]Very hard (finale)[/td][/tr]
+[tr][td]10[/td][td]Control tower[/td][td]The film's admin room: a hooded console, two screens hung from the ceiling, a tall red light panel, a low bench and a tower unit for cover, a lit sign over the side door[/td][td]2 soldats holding the far side, 1 riot guard, 1 engineer, then one more soldat through the door (combat)[/td][td]Very hard (finale)[/td][/tr]
 [/table]
 
 Based on the fan collab "NEXUS: HANK RAID" (watch it: https://www.youtube.com/watch?v=v0suvMY3GgM). No art from the video is used. The rooms are built from simple shapes drawn with the game's own outlined terrain shader, in the film's gray-and-red look. Each room has its own light and one landmark, and the larger props (crates, counters, desk, lockers, a cabinet) are modelled in code instead of left as plain boxes. Props that look solid block movement.
