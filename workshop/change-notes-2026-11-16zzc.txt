@@ -1,0 +1,1 @@
+- Cargo bay: the low deck along the back wall is now a firing step you can walk onto. Go up the slope at its right end; the agents can use it too.
