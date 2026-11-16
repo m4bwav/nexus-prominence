@@ -1790,9 +1790,11 @@ public static class NexusProminenceBuilder
     // 7: corridor lit by ceiling lamps throwing red cones down the back wall; dark slate board.
     static void SpotlightCorridor(Frame f)
     {
-        for (int i = 0; i < 4; i++)
+        // zzf FilmRoom7Structures: the film's two cones at u 0.20 and 0.65, not four spread to the ends
+        float[] lampAt = FilmRoom7Structures ? new[] { f.x0 + 0.20f * f.W, f.x0 + 0.65f * f.W } : new[] { 0f, 1f, 2f, 3f }.Select(i => f.x0 + 4f + i * (f.W - 8f) / 3f).ToArray();
+        for (int i = 0; i < lampAt.Length; i++)
         {
-            float x = f.x0 + 4f + i * (f.W - 8f) / 3f;
+            float x = lampAt[i];
             Box(f, "Lamp", x, f.y + 6.3f, f.zb - 0.5f, 1.4f, 0.25f, 0.6f, "dark");
             var glow = Box(f, "LampGlow", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "screen");
             var dead = Box(f, "LampDead", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "black");
@@ -1809,6 +1811,7 @@ public static class NexusProminenceBuilder
             Breakable(f, "Lamp" + i, new Vector3(x, f.y + 6.2f, f.zb - 0.5f), new Vector3(1.4f, 0.4f, 0.8f),
                 new List<GameObject> { glow, beam }, new List<GameObject> { dead }, LampHits, "", LampBreakSound);
         }
+        if (FilmRoom7Structures) { FilmCorridor(f); return; }
         Box(f, "Slate", f.Cx + 1f, f.y + 3.2f, f.zb - 0.1f, 6f, 2.4f, 0.06f, "dark");
         Box(f, "SlateFrame", f.Cx + 1f, f.y + 1.95f, f.zb - 0.14f, 6.3f, 0.12f, 0.12f, "steel");
         Box(f, "Shutter", f.x0 + 3f, f.y + 2.2f, f.zb - 0.12f, 2f, 4.4f, 0.06f, "steel");
@@ -1817,6 +1820,43 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < 3; i++) { float bx = f.x0 + 4f + (i + 0.5f) * (f.W - 8f) / 3f; if (Mathf.Abs(bx - (f.Cx + 1f)) > 4.2f) Banner(f, bx, f.y + 3.4f, f.zb - 0.1f, false); }
         BackDoorway(f, f.x0 + 1.9f);
         BackDoorway(f, f.x1 - 1.9f);
+    }
+
+    // ---- Film geometry, room 7 (build zzf): the film's spotlight corridor, 6:40.5-7:25.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-07-spotlight-corridor.md). 1 m = 1.5 units. The film's floor is flat: cover is
+    // the wall, so the only solid pieces are the grey wall blocks framing the red wall at both ends (0.4 m proud,
+    // left 0.8 m and right 1.4 m wide, full height). Backdrop: the two lamps and cones (SpotlightCorridor), the framed
+    // screen panel u 0.25-0.55 (bottom 1.8 m up), the emblem door at u 0.63 shown closed with its hazard foot (it
+    // opens in the film; fake doors stay off), the louvre panel at u 0.10. Left out: the right block's dark doorway
+    // (fake doors off) and the hip-height red band (the band is shared wall dressing; a change for every room).
+    // Removed under the toggle: two of four lamps, the slate, banners. Set false to build zze's corridor.
+    const bool FilmRoom7Structures = true;
+    static void FilmCorridor(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb, pr = 0.4f * m;
+        // 5: grey wall blocks at both ends, proud of the red wall; 3.6 units in from the side walls, clear of the
+        // side-wall doors 3.1 units out (zzf first pass: blocks at the corners failed the door gate)
+        foreach (var (x, w) in new[] { (f.x0 + 3.6f + 0.4f * m, 0.8f * m), (f.x1 - 3.6f - 0.7f * m, 1.4f * m) })
+        {
+            filmStructures.Add(Box(f, "EndBlock", x, f.y + 4.5f, zb - pr / 2, w, 9f, pr, "wall"));
+            Box(f, "EndBlockSkirt", x, f.y + 0.2f, zb - pr / 2, w + 0.06f, 0.4f, pr + 0.06f, "red");
+        }
+        // 2: framed screen panel u 0.25-0.55, 0.9 m tall, bottom 1.8 m up
+        float s0 = u(0.25f), s1 = u(0.55f), sy = f.y + 1.8f * m, sh = 0.9f * m;
+        Box(f, "Slate", (s0 + s1) / 2, sy + sh / 2, zb - 0.1f, s1 - s0, sh, 0.06f, "dark");
+        Box(f, "SlateFrame", (s0 + s1) / 2, sy - 0.06f, zb - 0.14f, s1 - s0 + 0.2f, 0.12f, 0.12f, "steel");
+        Box(f, "SlateText", s1 - 1.2f, sy + 0.3f, zb - 0.14f, 1.6f, 0.25f, 0.02f, "white");
+        // 3: emblem door at u 0.63, 1.1 x 2.0 m, closed, hazard-striped foot
+        float dx = u(0.63f), dw = 1.1f * m, dh = 2.0f * m;
+        Box(f, "EmblemDoorFrame", dx, f.y + dh / 2 + 0.05f, zb - 0.08f, dw + 0.3f, dh + 0.1f, 0.05f, "dark");
+        Box(f, "EmblemDoorPanel", dx, f.y + dh / 2 + 0.05f, zb - 0.12f, dw, dh, 0.04f, "panel");
+        Box(f, "EmblemDoorMark", dx, f.y + dh * 0.6f, zb - 0.15f, 0.7f, 0.7f, 0.02f, "red");
+        for (int k = 0; k < 4; k++) Box(f, "EmblemDoorFoot", dx - dw / 2 + (k + 0.5f) * dw / 4, f.y + 0.2f, zb - 0.15f, dw / 4, 0.3f, 0.02f, k % 2 == 0 ? "red" : "dark");
+        // 6: louvre panel at u 0.10, 1.0 x 2.5 m
+        float lx = f.x0 + 3.6f + 0.8f * m + 0.2f + 0.5f * m, lh = 2.5f * m; // right of the left block (film u 0.05-0.15)
+        Box(f, "Shutter", lx, f.y + lh / 2 + 0.05f, zb - 0.12f, 1.0f * m, lh, 0.06f, "steel");
+        for (float yy = f.y + 0.3f; yy < f.y + lh; yy += 0.3f) Box(f, "ShutterLine", lx, yy, zb - 0.16f, 1.0f * m, 0.05f, 0.02f, "dark");
     }
 
     // 8: locker room: a bank of tall lockers, a bench, a cabinet; a ceiling lamp cone.
