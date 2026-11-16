@@ -472,6 +472,7 @@ public static class NexusProminenceBuilder
         frames[room] = f;
         BuildMapWalls(f, room);
         Shell(f, room, index);
+        curRoom = room;
         switch (index)
         {
             case 0: Street(f); break;
@@ -1250,6 +1251,50 @@ public static class NexusProminenceBuilder
     // deck, the red band with hazard stripes and an emblem plaque, the deck's red front edge.
     // Set false to build zz's cargo bay (crates against the back wall, pallet, floor strips, banners).
     const bool FilmRoom4Structures = true;
+    // Build zzc (owner's play 2026-11-16: "I couldn't get up the little ramp"): the deck and its slope become the
+    // chain's one walkable proof, by the recipe in ai-docs/notes/film-geometry/floor-height-research.md. The deck's
+    // collider goes to layer Terrain with tag Floor (the game stands on it, waypoints snap to it); the drawn wedge
+    // loses its collider and an invisible straight Box on layer Interactive (blocks standing characters only) lies
+    // under it, flush with the floor at the foot and running 0.1 units into the deck top at the head, so neither end
+    // has a lip. The slope is 0.675 units over 3.6, about 10.6 degrees (limit 30, game limit about 45): no
+    // lengthening needed. Waypoints at the ramp's foot (floor) and head (deck), ForceConnect both ways; none over
+    // the ramp (SnapToFloor ignores Interactive). The deck is 0.675 units high, far under the 2-unit link-gap and
+    // fall limits, so its open front edge needs no PathBlock (a step down links like flat floor). Set false to
+    // build zzb's solid deck and slope.
+    const bool FilmRoom4Walkable = true;
+    const int TerrainLayer = 8, InteractiveLayer = 12;
+    static RoomObj curRoom;
+    static void DeckRamp(Frame f, float dx1, float rl, float dh, float dd)
+    {
+        float ang = Mathf.Atan2(dh, rl), len = Mathf.Sqrt(rl * rl + dh * dh), th = 0.3f, over = 0.1f, bury = 0.2f;
+        float full = len + (over + bury) / Mathf.Cos(ang);
+        // top surface line: from the head (dx1 - over, deck top + over*tan) down to the foot (dx1 + rl + bury, floor - bury*tan)
+        float tx0 = dx1 - over, ty0 = f.y + dh + over * Mathf.Tan(ang), tx1 = dx1 + rl + bury, ty1 = f.y - bury * Mathf.Tan(ang);
+        var mid = new Vector3((tx0 + tx1) / 2, (ty0 + ty1) / 2, f.zb - dd / 2);
+        var n = new Vector3(Mathf.Sin(ang), Mathf.Cos(ang), 0f); // top face normal, leaning toward the foot
+        var r = new GameObject("NX_DeckRampCollider");
+        r.transform.SetParent(f.Parent, true);
+        r.transform.position = mid - n * (th / 2);
+        r.transform.rotation = Quaternion.Euler(0f, 0f, -ang * Mathf.Rad2Deg);
+        var bc = r.AddComponent<BoxCollider>();
+        bc.size = new Vector3(full, th, dd - 0.1f);
+        r.layer = InteractiveLayer; r.isStatic = true;
+        // waypoints at the foot (on the floor, a unit clear of the ramp) and on the deck by the head, linked both ways
+        var proto = curRoom != null ? curRoom.GetComponentsInChildren<Marker_Waypoint>(true).FirstOrDefault(w => w.Type == Marker_Waypoint.MarkerType.Standard) : null;
+        var parent = proto != null ? proto.transform.parent : (curRoom != null ? (curRoom.transform.Find("Waypoints") ?? curRoom.transform) : f.Parent);
+        Marker_Waypoint Wp(string name, Vector3 at)
+        {
+            var go = proto != null ? Object.Instantiate(proto.gameObject, parent) : new GameObject(name);
+            if (proto == null) { go.transform.SetParent(parent, true); go.AddComponent<Marker_Waypoint>(); }
+            go.name = name; go.transform.position = at;
+            var w = go.GetComponent<Marker_Waypoint>(); w.Type = Marker_Waypoint.MarkerType.Standard; w.Floating = false; w.ForceConnect = new List<Marker_Waypoint>();
+            return w;
+        }
+        var foot = Wp("Waypoint_DeckRampFoot", new Vector3(dx1 + rl + 1.0f, f.y + 0.1f, f.zb - dd / 2));
+        var head = Wp("Waypoint_DeckRampHead", new Vector3(dx1 - 1.0f, f.y + dh + 0.1f, f.zb - dd / 2));
+        foot.ForceConnect.Add(head); head.ForceConnect.Add(foot);
+        Debug.Log("NX_WALKABLE room 4 deck top " + (f.y + dh).ToString("0.###") + " ramp " + (ang * Mathf.Rad2Deg).ToString("0.#") + " deg over " + rl.ToString("0.##") + " units; waypoints " + (proto != null ? "cloned" : "new") + " under " + parent.name);
+    }
     static void FilmCargo(Frame f)
     {
         float u(float a) => f.x0 + a * f.W;
@@ -1263,6 +1308,7 @@ public static class NexusProminenceBuilder
         float dh = 0.45f * m, dd = 2f * m, dx0 = u(0.10f), dx1 = u(0.70f);
         var deck = Box(f, "BackDeck", (dx0 + dx1) / 2, f.y + dh / 2, f.zb - dd / 2, dx1 - dx0, dh, dd, "panel");
         if (deck.GetComponent<BoxCollider>() == null) { deck.AddComponent<BoxCollider>(); deck.layer = ObstacleLayer; solidCount++; }
+        if (FilmRoom4Walkable) { deck.layer = TerrainLayer; deck.tag = "Floor"; }
         filmStructures.Add(deck);
         Box(f, "BackDeckEdge", (dx0 + dx1) / 2, f.y + dh + 0.02f, f.zb - dd + 0.06f, dx1 - dx0, 0.04f, 0.12f, "red");
         Box(f, "BackDeckFace", (dx0 + dx1) / 2, f.y + dh / 2, f.zb - dd - 0.02f, dx1 - dx0, 0.12f, 0.02f, "red");
@@ -1270,8 +1316,12 @@ public static class NexusProminenceBuilder
         float rl = 2.4f * m;
         var ramp = Wedge(f, "DeckSlope", dx1 + rl / 2, f.y, f.zb - dd / 2, rl, dh, dd, 0.0f, "panel", true);
         ramp.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
-        if (ramp.GetComponent<BoxCollider>() == null) { ramp.AddComponent<BoxCollider>(); ramp.layer = ObstacleLayer; solidCount++; }
-        filmStructures.Add(ramp);
+        if (FilmRoom4Walkable) DeckRamp(f, dx1, rl, dh, dd);
+        else
+        {
+            if (ramp.GetComponent<BoxCollider>() == null) { ramp.AddComponent<BoxCollider>(); ramp.layer = ObstacleLayer; solidCount++; }
+            filmStructures.Add(ramp);
+        }
         // 4: vent box on the back wall above the deck, grilled face
         float vx = u(0.45f);
         Box(f, "VentBox", vx, f.y + dh + 0.7f * m, f.zb - 0.2f, 0.7f * m, 1.4f * m, 0.3f, "steel");
