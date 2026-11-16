@@ -514,6 +514,7 @@ public static class NexusProminenceBuilder
                 var p = covers[c].transform.position;
                 // Spread through the floor, not one row: the video's rooms have crates and desks out in the open.
                 Vector2 at = FilmRoom6Structures && index == 5 && c == 3 ? new Vector2(0.92f, 0.6f) // clear of the near pylon (zw)
+                    : FilmRoom5Structures && index == 4 && c == 1 ? new Vector2(0.88f, 0.55f) // clear of the sloped wall and the stack (zx)
                     : spec.CoverAt != null && c < spec.CoverAt.Length ? spec.CoverAt[c]
                     : new Vector2((c + 1f) / (spec.Cover.Length + 1f), c % 2 == 0 ? 0.35f : 0.65f);
                 var cp = new Vector3(Mathf.Lerp(f.x0 + 1.5f, f.x1 - 1.5f, at.x), p.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, at.y));
@@ -764,7 +765,8 @@ public static class NexusProminenceBuilder
             case 4: // light strip under the ledge: the high ground is the bright place
                 if (FilmGrade) Box(f, "Skirting", (f.x0 + 0.2f + f.x1 - 5.2f) / 2, f.y + 0.15f, f.zb - 0.08f, f.x1 - 5.4f - f.x0, 0.3f, 0.05f, "red"); // film 8:45 red skirting
 
-                Box(f, "LedgeGlow", (f.Cx - 2f + f.x1 - 1f) / 2, f.y + 3.2f, f.zb - 1.0f, f.x1 - 1f - (f.Cx - 2f) - 0.4f, 0.08f, 0.6f, "lit");
+                if (FilmRoom5Structures) Box(f, "LedgeGlow", f.x0 + 0.75f * f.W, f.y + LoftDeck - LoftSlab - 0.05f, f.zb - 0.4f, 0.26f * f.W - 0.6f, 0.08f, 0.5f, "lit"); // under the film slab (zx)
+                else Box(f, "LedgeGlow", (f.Cx - 2f + f.x1 - 1f) / 2, f.y + 3.2f, f.zb - 1.0f, f.x1 - 1f - (f.Cx - 2f) - 0.4f, 0.08f, 0.6f, "lit");
                 break;
             case 5: // parking bay lines on the garage floor
                 for (int k = 0; k < 4; k++) Box(f, "BayLine", f.x0 + 4f + k * 4f, f.y + 0.012f, f.zb - 3f, 0.15f, 0.02f, 3.5f, "white");
@@ -1201,6 +1203,7 @@ public static class NexusProminenceBuilder
     // 5: sniper loft: a ledge across the back wall at head height, ladder up to it, a big open-frame crate.
     static void SniperLoft(Frame f)
     {
+        if (FilmRoom5Structures) { FilmLoft(f); return; }
         float ly = f.y + 3.4f, lx0 = f.Cx - 2f, lx1 = f.x1 - 1f;
         Box(f, "Ledge", (lx0 + lx1) / 2, ly, f.zb - 1.0f, lx1 - lx0, 0.3f, 2.0f, "panel");
         Box(f, "LedgeLip", (lx0 + lx1) / 2, ly + 0.05f, f.zb - 2.02f, lx1 - lx0, 0.4f, 0.06f, "red");
@@ -1218,6 +1221,65 @@ public static class NexusProminenceBuilder
         OpenCrate(f, f.x0 + 5f, f.zb - 1.8f, 2.6f);
         Banner(f, f.x0 + 0.3f * f.W, f.y + 3.4f, f.zb - 0.1f, false);
         BackDoorway(f, f.x1 - 3.5f);
+    }
+
+    // ---- Film geometry, room 5 (build zx): the film's balcony-and-ladder room, 5:51.5-6:19.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-05-sniper-loft.md, owner frame 6:03). 1 m = 1.5 units, as in zw. Solid on
+    // the one floor: the big braced crate the player hides behind (u 0.20), the long sloped low wall running
+    // diagonally out from the back wall (u 0.50 at the wall to 0.62 about 4 m out) that the guards hold, the
+    // stacked crates under the balcony (u 0.72) and the wall pier beside the ladder (u 0.93). The balcony is
+    // backdrop until the second floor height is researched (prompt C1): a thick slab with a chamfered underside
+    // and no rail, its deck 3.6 m up, the ladder at its right end, a doorway on the deck behind the sniper, the
+    // red band rising in an upright stripe to deck level. The back door moves to the film's u 0.42. Set false to
+    // build zw's loft (thin railed ledge at head height, ladder at its left end, wire crate).
+    const bool FilmRoom5Structures = true;
+    const float LoftDeck = 5.4f, LoftSlab = 0.9f;
+    static void FilmLoft(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f; // units per metre
+        // 1: balcony slab, 4.5 x 1.2 x 0.6 m, the underside chamfered back to the wall (a wedge upside down)
+        float bx0 = u(0.62f), bx1 = u(0.88f), deck = f.y + LoftDeck, depth = 1.2f * m;
+        var slab = Wedge(f, "Ledge", (bx0 + bx1) / 2, deck - LoftSlab, f.zb - depth / 2, bx1 - bx0, LoftSlab, depth, 0.4f, "panel");
+        slab.transform.rotation = Quaternion.Euler(0f, 0f, 180f);
+        // 3: doorway on the deck behind the sniper, lit panel in a proud frame
+        Box(f, "LoftDoorFrame", u(0.70f), deck + 1.7f, f.zb - 0.12f, 1.6f * m + 0.3f, 2.1f * m + 0.15f, 0.12f, "dark");
+        Box(f, "LoftDoor", u(0.70f), deck + 1.65f, f.zb - 0.2f, 1.6f * m, 2.1f * m, 0.04f, "panel");
+        // 2: ladder at the right end, from the floor past the deck
+        float half = 0.85f * m / 2, lad = bx1 + half + 0.05f, top = deck + 1.2f, lz = f.zb - 0.35f;
+        Box(f, "LadderRailA", lad - half, (f.y + top) / 2, lz, 0.1f, top - f.y, 0.1f, "steel");
+        Box(f, "LadderRailB", lad + half, (f.y + top) / 2, lz, 0.1f, top - f.y, 0.1f, "steel");
+        for (float yy = f.y + 0.45f; yy < top - 0.2f; yy += 0.45f) Box(f, "Rung", lad, yy, lz, 2 * half - 0.12f, 0.07f, 0.07f, "steel");
+        // 4: wall pier right of the ladder, floor to the top of the wall; the red band wraps it
+        float pw = 0.9f * m, pd = 0.5f, ph = 9f, px = u(0.93f) + 0.6f; // 0.33 m deep, not 0.5: 3.5 units clear of the right-wall door
+        filmStructures.Add(Box(f, "Pier", px, f.y + ph / 2, f.zb - pd / 2, pw, ph, pd, "panel"));
+        Box(f, "PierBand", px, f.y + 1.6f, f.zb - pd / 2, pw + 0.06f, 0.55f, pd + 0.06f, "red");
+        Box(f, "PierBand", px, deck + 0.5f, f.zb - pd / 2, pw + 0.06f, 0.55f, pd + 0.06f, "red");
+        // 5: red band turned upright left of the balcony, a second band at deck level (the pier carries the band in the recess)
+        Box(f, "BandRise", u(0.60f), (f.y + 1.6f + deck + 0.75f) / 2, f.zb - 0.07f, 0.5f * m, deck + 0.75f - f.y - 1.6f, 0.1f, "red");
+        Box(f, "BandHigh", (u(0.60f) + u(0.93f)) / 2, deck + 0.5f, f.zb - 0.07f, u(0.93f) - u(0.60f), 0.55f, 0.1f, "red");
+        // 6: the sloped low wall, 4 m x 1.3 m x 0.45 m, diagonal from the back wall out toward the camera,
+        // the slope toward the way in (left), red top edge; the guards hold behind it
+        var p0 = new Vector3(u(0.50f), 0f, f.zb - 0.5f * m); var p1 = new Vector3(u(0.62f), 0f, f.zb - 4f * m);
+        var mid = (p0 + p1) / 2; float yaw = Mathf.Atan2(p0.z - p1.z, p1.x - p0.x) * Mathf.Rad2Deg;
+        float wl = 4f * m, wh = 1.3f * m, wt = 0.45f * m;
+        var wall = Wedge(f, "SlopeWall", mid.x, f.y, mid.z, wl, wh, wt, 0.4f, "panel");
+        wall.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        filmStructures.Add(wall);
+        var edge = Box(f, "SlopeWallEdge", mid.x, f.y + wh + 0.04f, mid.z, wl + 0.04f, 0.08f, wt * 0.4f + 0.04f, "red");
+        edge.transform.rotation = wall.transform.rotation;
+        edge.transform.position = mid + wall.transform.rotation * new Vector3(0f, 0f, wt * 0.3f) + Vector3.up * (f.y + wh + 0.04f);
+        // 7: the big braced crate by the way in, 2.6 m wide, 2.4 m tall, solid
+        float cs = 2.4f * m, cx = u(0.20f), cz = f.zb - 2.75f * m;
+        OpenCrate(f, cx, cz, cs);
+        filmStructures.Add(Box(f, "CrateCore", cx, f.y + cs / 2, cz, cs - 0.2f, cs - 0.1f, cs - 0.2f, "panel")); // grey infill so the black braces read (film 5:59)
+        // 8: stacked crates under the left end of the balcony, 2.1 m with 1.0 m on top
+        float sx = u(0.72f), lo = 2.1f * m, hi = 1.0f * m, sz = f.zb - 1.75f * m;
+        filmStructures.Add(Box(f, "CrateStack", sx, f.y + lo / 2, sz, lo, lo, lo, "panel"));
+        Box(f, "CrateStackTop", sx - 0.3f, f.y + lo + hi / 2, sz - 0.3f, hi, hi, hi, "dark");
+        Banner(f, f.x0 + 0.3f * f.W, f.y + 3.4f, f.zb - 0.1f, false);
+        // 10: the back-wall door at the film's u 0.42 (zw had it at the right end, where the ladder now stands)
+        BackDoorway(f, u(0.42f));
     }
 
     // 6: garage: a big roll-up shutter over a low control console, side door frame.

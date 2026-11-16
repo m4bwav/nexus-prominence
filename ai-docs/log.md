@@ -42,3 +42,4 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 
 ## 2026-11-16
 - Owner played zw (Player.log 07:52, Player-prev 07:21: 0 exceptions, only the stock terrain-shader warning; deployed md5 = sobj-zw) and asked to release. madnesswright 1.0.4 was already released and installed. tools/release.sh zw change-notes-2026-11-16zw.txt: upload result OK, gallery result 1.
+- 2026-11-16 Part C round 2 (build zx, room 5 sniper loft): FilmRoom5Structures adds the film's braced crate, diagonal sloped wall, stacked crates and pier (solid) and the balcony as a backdrop slab with the ladder at its right end. All gates pass; blind judge prefers zx from both cameras; sobj-zx in the lab; unverified in game. filmcams.txt room 5 refit to 5:59.5 (the old line and film_match time pointed at the pillar hall). madnesswright 1.0.5: scene-lint S23 by_room.
