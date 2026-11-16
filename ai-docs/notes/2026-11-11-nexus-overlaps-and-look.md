@@ -13,6 +13,7 @@ boxes are dumped to `MPN_SceneTools/NexusBoxes/<room>.json` for polywright `pw.p
   inside the back window (now behind `FakeDoors`), crates in a room 4 door opening (`Crate` now skips door spots),
   room 7's slate over a banner (that banner skipped).
 - Left as is: room 1's sign rods pass the window header (the sign hangs from it), room 3's file cabinets touch the
+- 2026-11-16 (build zze, FilmRoom3Structures): the film office has no filing cabinets, so room 3 shows no clashes; room 1's sign rods are the only known clash while that toggle is on.
   window sill.
 - Side effect to check in play: room 1's window lost its vertical mullions (pilasters crossing the window).
 

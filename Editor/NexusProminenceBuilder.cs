@@ -1139,6 +1139,7 @@ public static class NexusProminenceBuilder
     // supplies, tall dark doorways, red conduits from the ceiling, floor hatches, stripes on the band.
     static void WantedHall(Frame f)
     {
+        if (FilmRoom2Structures) { FilmWanted(f); return; }
         float[] doors = { f.x0 + 0.30f * f.W, f.x0 + 0.78f * f.W };
         foreach (var x in doors)
         {
@@ -1200,9 +1201,140 @@ public static class NexusProminenceBuilder
         }
     }
 
+    // ---- Film geometry, room 2 (build zzd): the film's wanted hall, set C, 1:21.5-2:13 (structure sheet
+    // ai-docs/notes/film-geometry/room-02-wanted-hall.md). 1 m = 1.5 units; pieces at the film's across positions
+    // (u) at film size. Solid on the one floor: the floor hatch (a pit drawn on the floor inside a 0.25 m rim, one
+    // collider over the whole hatch: a low obstacle mid-floor, not a route), the jutting wall block with its red
+    // edge (the one piece of cover the film uses) and the vending machine (keeps the display glass that breaks).
+    // Backdrop: the wanted case with its feed line to the ceiling, the red-framed panel round it, the recessed bay
+    // with its hazard sill. Removed under the toggle: three hung posters, two fake back doors with light bars, two
+    // ceiling conduits, two flat floor hatches, the centre display case. Set false to build zzc's wanted hall.
+    const bool FilmRoom2Structures = true;
+    static void FilmWanted(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // 2: red-framed wall panel u 0.08-0.48, 2.9 m tall, strip 0.2 m (floor line, both ends, top)
+        float p0 = u(0.08f), p1 = u(0.48f), ph = 2.9f * m, st = 0.2f * m;
+        Box(f, "WallPanel", (p0 + p1) / 2, f.y + ph / 2, zb - 0.06f, p1 - p0, ph, 0.04f, "panel");
+        Box(f, "PanelFrameFoot", (p0 + p1) / 2, f.y + st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
+        Box(f, "PanelFrameTop", (p0 + p1) / 2, f.y + ph - st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
+        foreach (var x in new[] { p0 + st / 2, p1 - st / 2 }) Box(f, "PanelFrameEnd", x, f.y + ph / 2, zb - 0.1f, st, ph, 0.06f, "red");
+        // 1: the wanted case, 1.3 x 1.6 m, bottom 0.5 m up, 0.2 m proud, lit portrait and a name plate; feed line to the ceiling
+        float cx = u(0.24f), cw = 1.3f * m, chh = 1.6f * m, cb = f.y + 0.5f * m, cd = 0.2f * m;
+        Box(f, "WantedCase", cx, cb + chh / 2, zb - 0.1f - cd / 2, cw, chh, cd, "dark");
+        Box(f, "WantedCaseGlow", cx, cb + chh / 2 + 0.2f, zb - 0.12f - cd, cw - 0.4f, chh - 0.9f, 0.02f, "screen");
+        Box(f, "WantedHead", cx, cb + chh / 2 + 0.3f, zb - 0.14f - cd, 0.6f, 0.75f, 0.02f, "panel");
+        Box(f, "WantedPlate", cx, cb + 0.3f, zb - 0.12f - cd, cw - 0.5f, 0.3f, 0.02f, "white");
+        float lx = cx + cw / 2 - 0.15f, ltop = f.y + 9f;
+        Box(f, "FeedLine", lx, (cb + chh + ltop) / 2, zb - 0.15f, 0.14f, ltop - cb - chh, 0.14f, "red");
+        // 4: jutting wall block at the panel's right end, 0.3 m wide and proud, full height, red edge strip
+        float bw = 0.3f * m, bx = p1 + bw / 2;
+        filmStructures.Add(Box(f, "WallBlock", bx, f.y + 4.5f, zb - bw / 2, bw, 9f, bw, "wall"));
+        Box(f, "WallBlockEdge", bx, f.y + 4.5f, zb - bw - 0.02f, bw, 9f, 0.04f, "red");
+        // 5: recessed bay at u 0.57: dark panel in a red frame, hazard sill 0.45 m up, chamfered red header bar
+        float yx = u(0.57f), yw = 1.6f * m, yh = 2.0f * m, ys = f.y + 0.45f * m;
+        Box(f, "BayPanel", yx, ys + yh / 2, zb - 0.03f, yw, yh, 0.02f, "black");
+        foreach (var x in new[] { yx - yw / 2 - 0.1f, yx + yw / 2 + 0.1f }) Box(f, "BayFrame", x, ys + yh / 2, zb - 0.08f, 0.2f, yh + 0.2f, 0.1f, "red");
+        for (int k = 0; k < 6; k++) Box(f, "BaySill", yx - yw / 2 + (k + 0.5f) * yw / 6, ys - 0.08f, zb - 0.12f, yw / 6, 0.16f, 0.16f, k % 2 == 0 ? "red" : "dark");
+        var hdr = Box(f, "BayHeader", yx, ys + yh + 0.25f, zb - 0.15f, yw + 0.6f, 0.3f, 0.25f, "red");
+        hdr.transform.rotation = Quaternion.Euler(-20f, 0f, 0f);
+        // 6: vending machine at u 0.73, 1.6 x 2.4 x 0.7 m, angled red-trimmed housing; its glass still breaks (JuiceBreakables)
+        float vx = u(0.73f), vw = 1.6f * m, vh = 2.4f * m, vd = 0.7f * m, vz = zb - vd / 2 - 0.05f;
+        filmStructures.Add(Model2(Box(f, "Vending", vx, f.y + vh / 2, vz, vw, vh, vd, "dark"), "nx_vending"));
+        foreach (var s in new[] { -1, 1 })
+        {
+            // angled housing: the trim leans out from the wall, its back kept off the wall seam
+            var trim = Box(f, "VendingTrim", vx + s * (vw / 2 + 0.1f), f.y + vh / 2 + 0.03f, vz - 0.1f, 0.2f, vh, vd - 0.1f, "red");
+            trim.transform.rotation = Quaternion.Euler(0f, s * 8f, 0f);
+        }
+        Box(f, "VendingTop", vx, f.y + vh + 0.1f, vz, vw + 0.4f, 0.2f, vd + 0.1f, "red");
+        float gz = zb - vd - 0.08f;
+        var glass = Box(f, "VendingGlass", vx - 0.2f, f.y + vh * 0.55f, gz, vw - 0.8f, vh * 0.6f, 0.03f, "glass");
+        Box(f, "VendingKeypad", vx + vw / 2 - 0.3f, f.y + vh * 0.55f, gz, 0.3f, 0.5f, 0.02f, "steel");
+        Box(f, "VendingItem", vx - 0.2f, f.y + vh * 0.55f, gz + 0.02f, 0.5f, 0.4f, 0.02f, "white"); // the first aid kit
+        var shards = new List<GameObject> { Box(f, "VendingGlassRim", vx - 0.2f, f.y + vh * 0.82f, gz, vw - 0.8f, 0.2f, 0.03f, "glass") };
+        for (int k = 0; k < 5; k++)
+        {
+            var s = Box(f, "Shard", vx - 0.9f + k * 0.45f, f.y + 0.02f, gz - 0.3f - (k % 3) * 0.25f, 0.3f - (k % 2) * 0.12f, 0.02f, 0.18f, "glass");
+            s.transform.rotation = Quaternion.Euler(0, k * 37f, 0);
+            shards.Add(s);
+        }
+        Breakable(f, "VendingGlass", new Vector3(vx - 0.2f, f.y + vh * 0.55f, gz + 0.2f), new Vector3(vw - 0.8f, vh * 0.6f, 0.4f),
+            new List<GameObject> { glass }, shards, GlassHits, "", GlassBreakSound);
+        // 3: floor hatch at u 0.27, 2 m out: an open pit (drawn) inside a 0.25 m rim, slatted lid lying beside it
+        float hx = u(0.27f), hz = zb - 2.0f * m, hw = 2.3f * m, hd = 1.2f * m, rh = 0.25f * m, rt = 0.15f * m;
+        var hatch = Box(f, "HatchPit", hx, f.y + 0.012f, hz, hw - 2 * rt, 0.02f, hd - 2 * rt, "black");
+        // under Solidify's 0.8 height floor: one collider over the whole hatch, the rim's height (a low obstacle; nobody walks into the pit)
+        var hc = hatch.AddComponent<BoxCollider>();
+        hc.size = new Vector3(hw / (hw - 2 * rt), rh / 0.02f, hd / (hd - 2 * rt)); hc.center = new Vector3(0f, (rh / 2 - 0.012f) / 0.02f, 0f);
+        hatch.layer = ObstacleLayer; solidCount++;
+        filmStructures.Add(hatch);
+        foreach (var s in new[] { -1, 1 })
+        {
+            Box(f, "HatchRim", hx, f.y + rh / 2, hz + s * (hd - rt) / 2, hw, rh, rt, "steel");
+            Box(f, "HatchRim", hx + s * (hw - rt) / 2, f.y + rh / 2, hz, rt, rh, hd - 2 * rt, "steel");
+        }
+        float lx0 = hx + hw / 2 + 0.3f + hw * 0.45f;
+        Box(f, "HatchLid", lx0, f.y + 0.04f, hz, hw * 0.9f, 0.08f, hd * 0.9f, "dark");
+        for (int k = 0; k < 5; k++) Box(f, "HatchLidSlat", lx0 - hw * 0.36f + k * hw * 0.18f, f.y + 0.09f, hz, 0.14f, 0.02f, hd * 0.8f, "steel");
+        // 7, 8: the back doorway and the left-wall door are left out (fake doors stay off; doors unchanged)
+    }
+
+    // ---- Film geometry, room 3 (build zze): the film's controls office, 2:36-3:18 (structure sheet
+    // ai-docs/notes/film-geometry/room-03-controls-office.md). 1 m = 1.5 units. Solid on the one floor: the counter
+    // (u 0.12-0.48, 1.0 m tall, 0.6 m deep) standing 0.9 m clear of the back wall so defenders fit behind it, and
+    // the low kerb along the back wall right of it (0.45 m, a solid plinth, not a step: prompt C1). Backdrop: the red
+    // window over the counter, the pilaster at u 0.11, the wall block at u 0.50, the closed door under the
+    // "controls" sign at u 0.60 (it never opens in the film), the notice and the tilted poster. The entry doorway at
+    // the left stays BackDoorway (FakeDoors off: not built). Removed under the toggle: the right-of-centre window
+    // and counter, filing cabinets, banner, clock, notices. Set false to build zzd's office.
+    const bool FilmRoom3Structures = true;
+    static void FilmOffice(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // 1: red window u 0.15-0.48, sill 1.35 m up, 1.8 m tall, set back in a dark frame
+        float w0 = u(0.15f), w1 = u(0.48f), wy = f.y + 1.35f * m, wh = 1.8f * m;
+        Box(f, "BackWindow", (w0 + w1) / 2, wy + wh / 2, zb - 0.04f, w1 - w0, wh, 0.03f, "screen");
+        Box(f, "BackWindowFrame", (w0 + w1) / 2, wy - 0.1f, zb - 0.12f, w1 - w0, 0.2f, 0.16f, "dark");
+        Box(f, "BackWindowFrame", (w0 + w1) / 2, wy + wh + 0.1f, zb - 0.12f, w1 - w0, 0.2f, 0.16f, "dark");
+        // 2: counter, 1.0 m tall, 0.6 m deep, 0.9 m clear of the wall (a walkway behind it)
+        float c0 = u(0.15f), c1 = u(0.48f), ch = 1.0f * m, cd = 0.6f * m, cz = zb - 0.9f * m - cd / 2;
+        var counter = Model(Box(f, "Counter", (c0 + c1) / 2, f.y + ch / 2, cz, c1 - c0, ch, cd, "panel"), "nx_counter");
+        if (counter.GetComponent<BoxCollider>() == null) { counter.AddComponent<BoxCollider>(); counter.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(counter);
+        Box(f, "CounterTop", (c0 + c1) / 2, f.y + ch + 0.05f, cz, c1 - c0 + 0.3f, 0.1f, cd + 0.2f, "dark");
+        // 4: pilaster at u 0.11, 0.9 m wide, 0.2 m proud, skirting wrapped; 8: wall block at u 0.50, 0.7 m wide
+        foreach (var (a, w) in new[] { (0.11f, 0.9f), (0.50f, 0.7f) })
+        {
+            Box(f, "WallPier", u(a), f.y + 4.5f, zb - 0.15f, w * m, 9f, 0.3f, "wall");
+            Box(f, "WallPierSkirt", u(a), f.y + 0.2f, zb - 0.15f, w * m + 0.06f, 0.4f, 0.36f, "red");
+        }
+        // 6: low kerb from the wall block to near the right corner, 0.45 m high, 0.9 m deep; solid plinth, its own collider
+        float k0 = u(0.53f), k1 = u(KerbEnd), kh = 0.45f * m, kd = 0.9f * m;
+        var kerb = Box(f, "Kerb", (k0 + k1) / 2, f.y + kh / 2, zb - kd / 2, k1 - k0, kh, kd, "panel");
+        if (kerb.GetComponent<BoxCollider>() == null) { kerb.AddComponent<BoxCollider>(); kerb.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(kerb);
+        Box(f, "KerbEdge", (k0 + k1) / 2, f.y + kh + 0.02f, zb - kd + 0.06f, k1 - k0, 0.04f, 0.12f, "red");
+        // 5: closed emblem door under the "controls" sign at u 0.60, hazard sill, sign plate 1.6 x 0.35 m at 2.9 m
+        float dx = u(0.60f), dw = 1.4f * m, dh = 2.4f * m;
+        Box(f, "SignDoorFrame", dx, f.y + kh + dh / 2 + 0.03f, zb - 0.1f, dw + 0.3f, dh, 0.06f, "dark");
+        Box(f, "SignDoorPanel", dx, f.y + kh + dh / 2, zb - 0.14f, dw, dh, 0.04f, "panel");
+        for (int k = 0; k < 5; k++) Box(f, "SignDoorSill", dx - dw / 2 + (k + 0.5f) * dw / 5, f.y + kh + 0.12f, zb - 0.17f, dw / 5, 0.24f, 0.03f, k % 2 == 0 ? "red" : "dark");
+        Box(f, "ControlsSign", dx, f.y + 2.9f * m + 0.3f, zb - 0.12f, 1.6f * m, 0.35f * m, 0.06f, "white");
+        // flat dressing: notice at u 0.53, tilted recruiting poster at u 0.87
+        Box(f, "NoticeA", u(0.535f), f.y + 1.8f * m + 0.9f, zb - 0.1f, 0.8f, 0.8f, 0.04f, "panel");
+        var bill = Box(f, "Bill", u(0.87f), f.y + 1.6f * m + 0.6f, zb - 0.1f, 2.2f, 1.2f, 0.04f, "white");
+        bill.transform.rotation = Quaternion.Euler(0f, 0f, 6f);
+        BackDoorway(f, u(0.05f));
+    }
+    const float KerbEnd = 0.90f; // 3.5 units clear of the right-wall door (zze first pass: 0.95 failed the door gate)
+
     // 3: office with a long service counter, a glowing back window and a door marked by a red header.
     static void ControlsOffice(Frame f)
     {
+        if (FilmRoom3Structures) { FilmOffice(f); return; }
         // round 7 FilmRedFields: the film's office is one big red field from the counter top to the ceiling (2:41)
         if (FilmRedFields) Box(f, "BackWindow", f.Cx + 3f, f.y + 3.5f, f.zb - 0.06f, 12f, 3.8f, 0.04f, "screen");
         else Box(f, "BackWindow", f.Cx + 3f, f.y + 3.2f, f.zb - 0.06f, 12f, 3.2f, 0.04f, "screen");
@@ -1658,9 +1790,11 @@ public static class NexusProminenceBuilder
     // 7: corridor lit by ceiling lamps throwing red cones down the back wall; dark slate board.
     static void SpotlightCorridor(Frame f)
     {
-        for (int i = 0; i < 4; i++)
+        // zzf FilmRoom7Structures: the film's two cones at u 0.20 and 0.65, not four spread to the ends
+        float[] lampAt = FilmRoom7Structures ? new[] { f.x0 + 0.20f * f.W, f.x0 + 0.65f * f.W } : new[] { 0f, 1f, 2f, 3f }.Select(i => f.x0 + 4f + i * (f.W - 8f) / 3f).ToArray();
+        for (int i = 0; i < lampAt.Length; i++)
         {
-            float x = f.x0 + 4f + i * (f.W - 8f) / 3f;
+            float x = lampAt[i];
             Box(f, "Lamp", x, f.y + 6.3f, f.zb - 0.5f, 1.4f, 0.25f, 0.6f, "dark");
             var glow = Box(f, "LampGlow", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "screen");
             var dead = Box(f, "LampDead", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "black");
@@ -1677,6 +1811,7 @@ public static class NexusProminenceBuilder
             Breakable(f, "Lamp" + i, new Vector3(x, f.y + 6.2f, f.zb - 0.5f), new Vector3(1.4f, 0.4f, 0.8f),
                 new List<GameObject> { glow, beam }, new List<GameObject> { dead }, LampHits, "", LampBreakSound);
         }
+        if (FilmRoom7Structures) { FilmCorridor(f); return; }
         Box(f, "Slate", f.Cx + 1f, f.y + 3.2f, f.zb - 0.1f, 6f, 2.4f, 0.06f, "dark");
         Box(f, "SlateFrame", f.Cx + 1f, f.y + 1.95f, f.zb - 0.14f, 6.3f, 0.12f, 0.12f, "steel");
         Box(f, "Shutter", f.x0 + 3f, f.y + 2.2f, f.zb - 0.12f, 2f, 4.4f, 0.06f, "steel");
@@ -1685,6 +1820,43 @@ public static class NexusProminenceBuilder
         for (int i = 0; i < 3; i++) { float bx = f.x0 + 4f + (i + 0.5f) * (f.W - 8f) / 3f; if (Mathf.Abs(bx - (f.Cx + 1f)) > 4.2f) Banner(f, bx, f.y + 3.4f, f.zb - 0.1f, false); }
         BackDoorway(f, f.x0 + 1.9f);
         BackDoorway(f, f.x1 - 1.9f);
+    }
+
+    // ---- Film geometry, room 7 (build zzf): the film's spotlight corridor, 6:40.5-7:25.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-07-spotlight-corridor.md). 1 m = 1.5 units. The film's floor is flat: cover is
+    // the wall, so the only solid pieces are the grey wall blocks framing the red wall at both ends (0.4 m proud,
+    // left 0.8 m and right 1.4 m wide, full height). Backdrop: the two lamps and cones (SpotlightCorridor), the framed
+    // screen panel u 0.25-0.55 (bottom 1.8 m up), the emblem door at u 0.63 shown closed with its hazard foot (it
+    // opens in the film; fake doors stay off), the louvre panel at u 0.10. Left out: the right block's dark doorway
+    // (fake doors off) and the hip-height red band (the band is shared wall dressing; a change for every room).
+    // Removed under the toggle: two of four lamps, the slate, banners. Set false to build zze's corridor.
+    const bool FilmRoom7Structures = true;
+    static void FilmCorridor(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb, pr = 0.4f * m;
+        // 5: grey wall blocks at both ends, proud of the red wall; 3.6 units in from the side walls, clear of the
+        // side-wall doors 3.1 units out (zzf first pass: blocks at the corners failed the door gate)
+        foreach (var (x, w) in new[] { (f.x0 + 3.6f + 0.4f * m, 0.8f * m), (f.x1 - 3.6f - 0.7f * m, 1.4f * m) })
+        {
+            filmStructures.Add(Box(f, "EndBlock", x, f.y + 4.5f, zb - pr / 2, w, 9f, pr, "wall"));
+            Box(f, "EndBlockSkirt", x, f.y + 0.2f, zb - pr / 2, w + 0.06f, 0.4f, pr + 0.06f, "red");
+        }
+        // 2: framed screen panel u 0.25-0.55, 0.9 m tall, bottom 1.8 m up
+        float s0 = u(0.25f), s1 = u(0.55f), sy = f.y + 1.8f * m, sh = 0.9f * m;
+        Box(f, "Slate", (s0 + s1) / 2, sy + sh / 2, zb - 0.1f, s1 - s0, sh, 0.06f, "dark");
+        Box(f, "SlateFrame", (s0 + s1) / 2, sy - 0.06f, zb - 0.14f, s1 - s0 + 0.2f, 0.12f, 0.12f, "steel");
+        Box(f, "SlateText", s1 - 1.2f, sy + 0.3f, zb - 0.14f, 1.6f, 0.25f, 0.02f, "white");
+        // 3: emblem door at u 0.63, 1.1 x 2.0 m, closed, hazard-striped foot
+        float dx = u(0.63f), dw = 1.1f * m, dh = 2.0f * m;
+        Box(f, "EmblemDoorFrame", dx, f.y + dh / 2 + 0.05f, zb - 0.08f, dw + 0.3f, dh + 0.1f, 0.05f, "dark");
+        Box(f, "EmblemDoorPanel", dx, f.y + dh / 2 + 0.05f, zb - 0.12f, dw, dh, 0.04f, "panel");
+        Box(f, "EmblemDoorMark", dx, f.y + dh * 0.6f, zb - 0.15f, 0.7f, 0.7f, 0.02f, "red");
+        for (int k = 0; k < 4; k++) Box(f, "EmblemDoorFoot", dx - dw / 2 + (k + 0.5f) * dw / 4, f.y + 0.2f, zb - 0.15f, dw / 4, 0.3f, 0.02f, k % 2 == 0 ? "red" : "dark");
+        // 6: louvre panel at u 0.10, 1.0 x 2.5 m
+        float lx = f.x0 + 3.6f + 0.8f * m + 0.2f + 0.5f * m, lh = 2.5f * m; // right of the left block (film u 0.05-0.15)
+        Box(f, "Shutter", lx, f.y + lh / 2 + 0.05f, zb - 0.12f, 1.0f * m, lh, 0.06f, "steel");
+        for (float yy = f.y + 0.3f; yy < f.y + lh; yy += 0.3f) Box(f, "ShutterLine", lx, yy, zb - 0.16f, 1.0f * m, 0.05f, 0.02f, "dark");
     }
 
     // 8: locker room: a bank of tall lockers, a bench, a cabinet; a ceiling lamp cone.
@@ -1793,6 +1965,7 @@ public static class NexusProminenceBuilder
     // 9: break room: serving counter under a row of glowing menu panels, tables, a drum.
     static void BreakRoom(Frame f)
     {
+        if (FilmRoom9Structures) { FilmCanteen(f); return; }
         float cx = f.Cx + 2f;
         Box(f, "ServeCounter", cx, f.y + 0.7f, f.zb - 1.0f, 10f, 1.4f, 1.4f, "panel"); // round 5 judge kept the zn box here
         Box(f, "ServeTop", cx, f.y + 1.45f, f.zb - 1.0f, 10.3f, 0.1f, 1.6f, "dark");
@@ -1812,6 +1985,53 @@ public static class NexusProminenceBuilder
         Box(f, "VendingFace", f.x1 - 4.2f, f.y + 2.3f, f.zb - 1.32f, 1.2f, 2.4f, 0.03f, "screen");
         Banner(f, f.x0 + 1.9f, f.y + 3.4f, f.zb - 0.1f, false);
     }
+
+    // ---- Film geometry, room 9 (build zzg): the film's canteen, set A, 10:14-10:33.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-09-break-room.md). 1 m = 1.5 units. Solid on the one floor: the serving
+    // counter (4.5 m long, 1.0 m tall, 1.0 m deep, 0.2 m off the wall, u 0.62-0.84 on its red plinth) is the room's
+    // firing post; the wall jog right of the back doorway (0.4 m proud); the taped carton out on the floor (low cover).
+    // Backdrop: the serving hatch over the counter with the menu board, the round red light, the back doorway's deep
+    // red-jambed frame with a closed panel, the bin. Left out: the raised walkway along the back wall (a route: the
+    // chain's one walkable proof, room 4's deck, waits on its play before a second, prompt C1), the corridor mouth
+    // at u 0.05-0.22 and the doorway as an opening (fake doors off), the right-wall door (doors unchanged), set B's
+    // barrels, table and posters. Removed under the toggle: centre counter, menu panels, table, drum, slate, fridge,
+    // vending machine, banner (not in set A). Set false to build zzf's break room.
+    const bool FilmRoom9Structures = true;
+    static void FilmCanteen(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // A4: serving counter, top 1.0 m, 1.0 m deep, 0.2 m off the wall; ends 3.5 units clear of the right-wall door
+        float c0 = u(0.62f), c1 = c0 + 4.5f * m, ch = 1.0f * m, cd = 1.0f * m, cz = zb - 0.2f * m - cd / 2;
+        var counter = Box(f, "ServeCounter", (c0 + c1) / 2, f.y + ch / 2, cz, c1 - c0, ch, cd, "panel");
+        if (counter.GetComponent<BoxCollider>() == null) { counter.AddComponent<BoxCollider>(); counter.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(counter);
+        Box(f, "ServeTop", (c0 + c1) / 2, f.y + ch + 0.05f, cz, c1 - c0 + 0.2f, 0.1f, cd + 0.15f, "dark");
+        Box(f, "ServePlinth", (c0 + c1) / 2, f.y + 0.25f, zb - 0.2f * m - cd - 0.02f, c1 - c0, 0.5f, 0.02f, "red");
+        for (int k = 0; k < 3; k++) Cyl(f, "Cup", c0 + 1.5f + k * 1.6f, f.y + ch + 0.25f, cz, 0.25f, 0.35f, k == 1 ? "red" : "white");
+        // A5: serving hatch u 0.62-0.95 (3.6 x 1.6 m) over the counter, menu board on its right; A6: round red light at u 0.80
+        float hx = (c0 + c1) / 2, hw = 3.6f * m * 0.8f, hy = f.y + ch + 0.6f + 0.8f * m;
+        Box(f, "HatchOpening", hx - 0.6f, hy, zb - 0.03f, hw, 1.6f * m, 0.02f, "black");
+        Box(f, "HatchFrameTop", hx - 0.6f, hy + 0.8f * m + 0.1f, zb - 0.1f, hw + 0.3f, 0.2f, 0.12f, "dark");
+        Box(f, "HatchFrameFoot", hx - 0.6f, hy - 0.8f * m - 0.1f, zb - 0.1f, hw + 0.3f, 0.2f, 0.12f, "dark");
+        Box(f, "MenuPanel", c1 + 0.2f, hy, zb - 0.1f, 1.6f, 2.0f, 0.06f, "screen");
+        Cyl(f, "RedLight", u(0.80f), hy + 0.8f * m + 1.0f, zb - 0.1f, 0.7f * m, 0.12f, "screen");
+        // A2: back doorway u 0.30-0.48 in a deep frame with red jambs, 0.4 m proud, shown closed (fake doors off)
+        float dx = u(0.39f), dw = 1.6f * m, dh = 2.4f * m, pr = 0.4f * m;
+        foreach (var sx in new[] { -1, 1 }) Box(f, "DoorJamb", dx + sx * (dw / 2 + 0.15f), f.y + dh / 2 + 0.05f, zb - pr / 2, 0.3f, dh, pr, "red");
+        Box(f, "DoorHeaderBlock", dx, f.y + dh + 0.35f, zb - pr / 2, dw + 0.6f, 0.5f, pr, "wall");
+        Box(f, "DoorPanelClosed", dx, f.y + dh / 2 + 0.05f, zb - 0.06f, dw, dh, 0.04f, "dark");
+        // A7: wall jog right of the doorway, u 0.48-0.60 (1.1 m wide), 0.4 m proud, full height, the band bending round it
+        float jx = u(0.48f) + 0.55f * m + 0.3f;
+        filmStructures.Add(Box(f, "WallJog", jx, f.y + 4.5f, zb - pr / 2, 1.1f * m, 9f, pr, "wall"));
+        Box(f, "WallJogBand", jx, f.y + 0.55f * 2.7f, zb - pr / 2, 1.1f * m + 0.06f, 0.45f * m, pr + 0.06f, "red");
+        // A10: taped carton out on the near left floor (low cover), a bin by the doorway
+        float tx = u(CartonU), tz = zb - CartonOut * m, ts = 1.1f * m;
+        filmStructures.Add(Box(f, "Carton", tx, f.y + ts / 2, tz, ts, ts, ts * 0.8f, "panel"));
+        Box(f, "CartonTape", tx, f.y + ts / 2, tz, 0.2f, ts + 0.02f, ts * 0.8f + 0.02f, "steel");
+        Cyl(f, "Bin", u(0.55f) - 1.6f, f.y + 0.45f * m, zb - 0.8f * m - 0.8f, 0.6f * m, 0.9f * m, "steel");
+    }
+    const float CartonU = 0.15f, CartonOut = 5f;
 
     // 10: control tower: a wall of red monitors above a long desk, server racks at the sides.
     static void ControlTower(Frame f)
