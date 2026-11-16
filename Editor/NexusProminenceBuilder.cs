@@ -2088,6 +2088,8 @@ public static class NexusProminenceBuilder
     // empty, and the vents and tower waves late, so round 1 raised them (zj -> zk: 3 -> 5, 4 -> 5, 6 -> 7).
     // Round 8 retired the ReinforceWhileFighting toggle: its only squads (rappel, vents, tower) exist only with
     // FilmTotals false, and then the zk caps apply. The zj caps stay readable here and in git history.
+    // Corrected in build zv: the cap is not tested for a spawner's first squad (see ArrivalsMidFight), so the
+    // three-man rappel team was never held back by it; the cap only gates the later squads of a longer wave.
     static int Cap(int zj, int zk) { return zk; }
 
     // Round 1 (build zk): every spare door of the sample room was a framed doorway nothing came through. DoorWaves
@@ -2101,6 +2103,26 @@ public static class NexusProminenceBuilder
     // (DisableSpawn) so room 1 holds exactly its 2 agents. False restores round 1's door wave in every room.
     const bool FilmTrueArrivals = true;
     static readonly bool[] FilmDoorWaves = { false, true, false, true, false, false, true, false, false, true };
+    // Build zv (film geometry chain, part A). A player reported the backup only on walking back through finished
+    // rooms, and that the level can be finished without seeing any. Cause, read in the decompiled game
+    // (Squad_DataAssigner.Update, Wave_Manager.CheckReadyToSpawn): the squad's timer is stamped on the first
+    // frame its room is current and is only looked at while the room is current. Nothing resets it when the room
+    // is left and nothing holds the player in the room, so with the zu delays (20, 18 and 20 s from entry, 8 s
+    // from the alarm) a player who cleared the room sooner walked on with the squad still armed, and it came out
+    // the moment the room was entered again. The unit cap was not the cause: the first squad of a spawner always
+    // enters (the cap is only tested while units of that wave are alive), and every zu door wave is one squad.
+    // ArrivalsMidFight makes every door squad wait for the alarm (SpawnRequirement MyFactionAlerted: placed
+    // enemies alive and not Unaware, so an emptied room never arms it), then MidFightDelay seconds; keeps the
+    // whole wave in one squad so nothing is left to come later; and sets the cap to placed + squad. Counts are
+    // unchanged. false = the zu timing; sobj-zu in the lab is the zu build.
+    const bool ArrivalsMidFight = true;
+    static readonly float[] MidFightDelay = { 2f, 2f, 2f, 4f, 3f, 3f, 3f, 3f, 3f, 3f };
+    static int PlacedCount(int index)
+    {
+        var foes = StagedFights && index < FilmCountFoes.Length && FilmCountFoes[index] != null ? FilmCountFoes[index] : Rooms[index].Foes;
+        if (FilmTotals && FilmTotalFoes[index] != null) foes = FilmTotalFoes[index];
+        return foes.Sum(x => x.Count);
+    }
     struct DoorWave { public float Delay; public bool OnAlarm; public int Cap; public Foe[] Foes; }
     static readonly DoorWave[] DoorWavePlan =
     {
@@ -2130,9 +2152,13 @@ public static class NexusProminenceBuilder
         var w = DoorWavePlan[index];
         if (FilmTotals && FilmTotalWaves[index] != null) { w.Foes = FilmTotalWaves[index]; w.Cap = Mathf.Min(w.Cap, 4); if (index == 1) w.Delay = 8f; }
         foreach (var d in spare) { d.SerialNumber = "NXP_" + room.name + "_door_" + System.Array.IndexOf(spare, d); EditorUtility.SetDirty(d); }
-        var m = Squad(room, f, "DoorWave", w.Delay, 2, w.Cap, Units(w.Foes),
+        int squadSize = 2, units = w.Foes.Sum(x => x.Count), placed = PlacedCount(index);
+        if (ArrivalsMidFight) { w.Delay = MidFightDelay[index]; w.OnAlarm = true; squadSize = Mathf.Max(2, units); w.Cap = placed + units; }
+        var m = Squad(room, f, "DoorWave", w.Delay, squadSize, w.Cap, Units(w.Foes),
             index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5, spare);
         if (m != null && w.OnAlarm) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
+        Debug.Log("NexusProminence: " + room.name + " arrival: placed " + placed + ", squad " + units + " in squads of " + squadSize + ", cap " + w.Cap
+            + ", " + w.Delay + " s " + (w.OnAlarm ? "after the alarm" : "after entry") + (ArrivalsMidFight ? " (ArrivalsMidFight)" : ""));
         // Round 6 sent the hall's placed scout in by Marker_Character.SpawnFromDoor; round 8 retired that. Decompiled
         // game: Converter_Marker copies SpawnFromDoor to Char_DataAssigner.SpawnToEntranceOrVehicle, and the character
         // spawns as soon as its room becomes current (CanSpawnOnSceneStart, Update) and is handed straight to the door
