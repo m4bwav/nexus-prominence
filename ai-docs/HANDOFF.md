@@ -9,13 +9,15 @@ Status: open. Set up 2026-11-15; nothing studied or built yet.
 - The ask (2026-11-15): the owner sees ramps, steps, higher areas and pillars in the film that the rooms do not show, and wants a closer inspection and rooms close to the film. A player also reported that the backup is only met when walking back through finished rooms and that the level can be finished without seeing any. Both are quoted in the brief.
 - The owner's five screenshots are in the lab's `frames/` folder as `owner-2026-11-15-*.png`. Placed in the film on 2026-11-15: three are the pillar-and-pylon hall (room 6, 8:49, 9:02, 9:13), the balcony is the sniper loft (room 5, 6:03), the admin room is the film's last room (room 10, 10:47). The brief's first guesses for the 8:49 shot and the admin room were wrong.
 - Build players have now: zu (Workshop item 3837705778, released 2026-11-14). Next build letter: zv.
-- Next: the reinforcements (prompt, part A): a subagent is on it (2026-11-15); cause not yet written down here.
-- Reinforcement fix: no build yet. When there is one, name it here; it stays the deployed build until the owner has played it.
+- Reinforcements (part A) done 2026-11-15: build zv (lab sobj-zv), PR #22, toggle ArrivalsMidFight. Cause: Squad_DataAssigner.Update stamps a squad's timer when its room becomes current, checks it only while current and never resets it; nothing holds the player in a room, so zu's timers from entry (20/18/20 s in rooms 4, 7, 10) lost to a fast clear and fired on re-entry. The unit cap was not the cause (Wave_Manager.CheckReadyToSpawn skips it for a first squad). zv: every door squad waits for the alarm, then 2/4/3/3 s (rooms 2/4/7/10), one squad, cap placed + squad; counts and positions unchanged. Gates pass; unverified in game. madnesswright 1.0.3 adds scene-lint S22 and corrects scenetools-rules.md.
+- Reinforcement fix: zv is the deployed build until the owner has played it; after any later build, redeploy sobj-zv. It is released alone, on the owner's word.
 - Structure sheets (prompt, part B): done 2026-11-15 for all ten rooms plus the film's generator room, in [notes/film-geometry/](notes/film-geometry/). Which film set and time range is each room: [notes/film-geometry/film-room-map.md](notes/film-geometry/film-room-map.md) (the owner asked for this table so rooms are not guessed). Rooms 4 and 7 were read from contact sheets only, sizes rough. Open questions from the studies: room 3 shows about 10 enemies and room 8 about 10 in the film, against 3 each on the map and the older film table below; that table needs re-reading against the new spans before counts change. Build order from the sheets: rooms in the owner's screenshots first (6 pillar hall, 5 loft, 10 admin room), then the widest gaps (8 steps and spotlights, 4 raised deck, 1 window sill).
 - Rooms built (part C): none. How the game treats a floor at a second height: not yet researched.
-- Askwright set for this chain: none yet. First question to put on it: may a session start the game itself to time the backup (the grant below says no)?
-- Waits on the owner: nothing yet.
-- Owner's test list: empty.
+- Askwright set for this chain: nexus-zv-test-2026-11-15 (lab ask/zv-test-2026-11-15): play zv, five look-fors. Still to ask: may a session start the game itself to time the backup (the grant below says no)?
+- Waits on the owner: playing zv (askwright set above).
+- Owner's test list: zv, the five lines in the askwright set (room 2 scout within 2 s of the alarm; room 4 two agents about 4 s in; room 7 two about 3 s in; room 10 one soldat about 3 s in; walking back meets nobody). Undo: ArrivalsMidFight = false, or deploy sobj-zu.
+- Next: part C, first round on room 6 (the pillar hall), solid structures only; the first walkable structure needs the floor-height research first (prompt C1).
+- Workshop page pictures fixed 2026-11-15 (PR #20): cover shows all ten rooms, shots hide editor placeholders; map file unchanged.
 
 ## Grants and limits (date, scope)
 
