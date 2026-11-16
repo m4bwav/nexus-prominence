@@ -1,0 +1,1 @@
+- Backup now arrives during the fight: in the wanted hall, cargo bay, spotlight corridor and control tower the door squad walks in a few seconds after the guards spot you, instead of 18 to 20 seconds after you enter. Clearing a room fast and walking back no longer meets a late squad. Enemy counts are unchanged. Thanks to the player who reported it.
