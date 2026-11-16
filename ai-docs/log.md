@@ -53,3 +53,4 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 
 - 2026-11-16: zzb (rooms 1, 4, 5, 8, 10 on top of zw) played by the owner ("testing went well") and released to Workshop 3837705778 with change-notes-2026-11-16zzb.txt via tools/release.sh (upload OK, previews OK). Steam changelog page returns nothing to curl, so the live text was not read back.
 - 2026-11-16: the owner had played zzc (Player.log 17:18 > zzc build 13:20; 1 stock IK NullReference in Combatant_Character.HandContact, not the mod). zzc release refused by the permission check; notes in workshop/change-notes-2026-11-16zzc.txt. Check Player.log time against the newest sobj before picking the build to release.
+- 2026-11-16: zzc released to Workshop 3837705778 on the owner's go-ahead (upload OK, md5 1919beb2).
