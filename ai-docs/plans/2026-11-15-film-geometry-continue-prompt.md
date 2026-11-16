@@ -32,7 +32,7 @@ One subagent per room. Each one:
 2. Writes a structure sheet, `ai-docs/notes/film-geometry/room-<nn>-<name>.md`: every fixed structure the film shows (the brief's list), with where it stands (across the room and out from the back wall), its size in character heights and in metres, what it does in the fight, the film times that show it and how sure the reading is. Then what the newest map render has in that place, and the gaps ranked by how much a viewer of the film would miss them.
 3. Says which film set the sheet follows when the film shows more than one for that room, and why.
 
-Sheets hold words and numbers only; frames stay in the lab. The master lists the sheets in HANDOFF.md and orders the build rounds from them: rooms in the owner's screenshots first, then the widest gaps.
+Which film set and time range belongs to each room is in [notes/film-geometry/film-room-map.md](../notes/film-geometry/film-room-map.md); use it instead of guessing, and correct it first when a study disagrees. Sheets hold words and numbers only; frames stay in the lab. The master lists the sheets in HANDOFF.md and orders the build rounds from them: rooms in the owner's screenshots first, then the widest gaps.
 
 ### C. Build, one room per round
 
