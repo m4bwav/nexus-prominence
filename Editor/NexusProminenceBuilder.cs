@@ -1185,6 +1185,7 @@ public static class NexusProminenceBuilder
     // 4: cargo bay: strapped crates stacked against the back and a pallet line, red floor hazard band.
     static void CargoBay(Frame f)
     {
+        if (FilmRoom4Structures) { FilmCargo(f); return; }
         Crate(f, f.x0 + 4f, f.zb - 1.4f, 2.2f);
         Crate(f, f.x0 + 4f, f.zb - 1.4f, 1.6f, 2.2f);
         Crate(f, f.x0 + 7f, f.zb - 1.4f, 1.8f);
@@ -1200,6 +1201,48 @@ public static class NexusProminenceBuilder
         Crate(f, f.x0 + 1.6f, f.zb - 3.2f, 1.4f);
         Crate(f, f.x1 - 1.6f, f.zb - 4.4f, 1.4f);
         Box(f, "HangSign", f.Cx, f.y + 6.2f, f.zb - 3f, 3f, 0.5f, 0.1f, "red");
+    }
+
+    // ---- Film geometry, room 4 (build zza): the film's crate room, set H, 5:22.5-5:51 (structure sheet
+    // ai-docs/notes/film-geometry/room-04-cargo-bay.md). 1 m = 1.5 units. The map room (about 43 units) is far
+    // wider than the film's 12.5 m, so pieces keep the film's order at film size and the extra floor stays
+    // bare. Solid on the one floor: the strapped crate out in the floor (u 0.475, 4 m out), the raised back
+    // deck (0.45 m, 2 m deep, u 0.10-0.70) and the sloped end at its right, both solid blocks and not a route
+    // (no second floor height until it is proven, prompt C1). Backdrop: the vent box on the back wall over the
+    // deck, the red band with hazard stripes and an emblem plaque, the deck's red front edge.
+    // Set false to build zz's cargo bay (crates against the back wall, pallet, floor strips, banners).
+    const bool FilmRoom4Structures = true;
+    static void FilmCargo(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f;
+        // 1: strapped crate standing alone in the floor, 1.2 x 1.0 x 0.7 m
+        float cx = u(0.475f), cz = f.zb - 4f * m, cw = 1.2f * m, ch = 1.0f * m, cd = 0.7f * m;
+        filmStructures.Add(Box(f, "FloorCrate", cx, f.y + ch / 2, cz, cw, ch, cd, "panel"));
+        Box(f, "FloorCrateLid", cx, f.y + ch + 0.03f, cz, cw + 0.06f, 0.06f, cd + 0.06f, "dark");
+        foreach (var s in new[] { -0.25f, 0.25f }) Box(f, "FloorCrateStrap", cx + s * cw, f.y + ch / 2, cz, 0.16f, ch + 0.04f, cd + 0.04f, "red");
+        // 2: raised back deck, 0.45 m high, 2 m deep; under Solidify's 0.8 height floor, so it gets its own collider
+        float dh = 0.45f * m, dd = 2f * m, dx0 = u(0.10f), dx1 = u(0.70f);
+        var deck = Box(f, "BackDeck", (dx0 + dx1) / 2, f.y + dh / 2, f.zb - dd / 2, dx1 - dx0, dh, dd, "panel");
+        if (deck.GetComponent<BoxCollider>() == null) { deck.AddComponent<BoxCollider>(); deck.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(deck);
+        Box(f, "BackDeckEdge", (dx0 + dx1) / 2, f.y + dh + 0.02f, f.zb - dd + 0.06f, dx1 - dx0, 0.04f, 0.12f, "red");
+        Box(f, "BackDeckFace", (dx0 + dx1) / 2, f.y + dh / 2, f.zb - dd - 0.02f, dx1 - dx0, 0.12f, 0.02f, "red");
+        // 3: the deck's sloped end at the right, down toward the right (a wedge turned round)
+        float rl = 2.4f * m;
+        var ramp = Wedge(f, "DeckSlope", dx1 + rl / 2, f.y, f.zb - dd / 2, rl, dh, dd, 0.0f, "panel", true);
+        ramp.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        if (ramp.GetComponent<BoxCollider>() == null) { ramp.AddComponent<BoxCollider>(); ramp.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(ramp);
+        // 4: vent box on the back wall above the deck, grilled face
+        float vx = u(0.45f);
+        Box(f, "VentBox", vx, f.y + dh + 0.7f * m, f.zb - 0.2f, 0.7f * m, 1.4f * m, 0.3f, "steel");
+        for (int k = 0; k < 6; k++) Box(f, "VentGrille", vx, f.y + dh + 0.25f * m + k * 0.18f * m, f.zb - 0.37f, 0.6f * m, 0.05f, 0.02f, "dark");
+        // 5: red band with hazard stripes at 2.2 m, an emblem plaque above
+        float by = f.y + 2.2f * m;
+        Box(f, "HazardBand", (u(0.20f) + u(0.40f)) / 2, by, f.zb - 0.07f, u(0.40f) - u(0.20f), 0.2f * m, 0.06f, "red");
+        for (float x = u(0.20f) + 0.3f; x < u(0.40f); x += 0.9f) Box(f, "HazardStripe", x, by, f.zb - 0.11f, 0.3f, 0.2f * m, 0.02f, "dark");
+        Box(f, "EmblemPlaque", u(0.30f), by + 0.9f, f.zb - 0.08f, 1.2f, 0.6f, 0.05f, "red");
     }
 
     // 5: sniper loft: a ledge across the back wall at head height, ladder up to it, a big open-frame crate.
