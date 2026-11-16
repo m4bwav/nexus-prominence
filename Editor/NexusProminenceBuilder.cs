@@ -649,6 +649,8 @@ public static class NexusProminenceBuilder
         float u = Mathf.Max(0.45f, p.u);
         // zw: the two engineers stand at the console itself, so the far pylon and the sloped blocks keep clear of them
         if (FilmRoom6Structures && index == 5 && n < 2) u = n == 0 ? 0.47f : 0.54f;
+        // zz: the sword agent stands left of the steps, between them and the free cabinet
+        if (FilmRoom8Structures && index == 7 && n == 1) u = 0.62f;
         go.transform.position = new Vector3(Mathf.Lerp(f.x0 + 1f, f.x1 - 1f, u), go.transform.position.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, p.v));
         var dir = p.face == Face.Entry ? Vector3.left : p.face == Face.Exit ? Vector3.right : p.face == Face.Back ? Vector3.forward : Vector3.back;
         go.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
@@ -1557,6 +1559,7 @@ public static class NexusProminenceBuilder
     // 8: locker room: a bank of tall lockers, a bench, a cabinet; a ceiling lamp cone.
     static void LockerRoom(Frame f)
     {
+        if (FilmRoom8Structures) { FilmLockers(f); return; }
         float lx = f.x0 + 4f;
         for (int i = 0; i < 6; i++)
         {
@@ -1574,6 +1577,86 @@ public static class NexusProminenceBuilder
         Box(f, "Board", f.x1 - 9f, f.y + 3.3f, f.zb - 0.16f, 1.1f, 1.5f, 0.04f, "panel");
         Banner(f, f.x1 - 2.2f, f.y + 3.4f, f.zb - 0.1f, false);
         Cyl(f, "Bin", f.x1 - 7f, f.y + 0.6f, f.zb - 0.7f, 0.9f, 1.2f, "steel");
+    }
+
+    // ---- Film geometry, room 8 (build zz): the film's locker room, 7:59.5-8:31.5 (structure sheet
+    // ai-docs/notes/film-geometry/room-08-locker-room.md). 1 m = 1.5 units. The map room (about 23 units) is
+    // near the film's 16 m, so pieces stand at the film's across positions and sizes. Solid on the one floor:
+    // three tall lockers (u 0.18-0.33), the square column (u 0.36), the wall cabinet (u 0.62), the free-standing
+    // cabinet and crate (u 0.70, 0.77; the right half's cover) and the flight of steps with its landing at the
+    // right, built as a solid stepped block, not a route (no second floor height until it is proven, prompt
+    // C1). Backdrop: the emblem door in the back wall, the two red spotlight cones (breakable, as room 7's
+    // lamps), the wall box on its pipe. Set false to build zy's locker room (six lockers, bench, board).
+    const bool FilmRoom8Structures = true;
+    static void FilmLockers(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f;
+        // 2: three tall lockers, 2.4 m tall, each 0.67 m wide, 0.5 m deep, vents at the top
+        for (int i = 0; i < 3; i++)
+        {
+            float x = u(0.205f) + i * 0.67f * m;
+            filmStructures.Add(Model(Box(f, "Locker", x, f.y + 1.2f * m, f.zb - 0.25f * m - 0.05f, 0.65f * m, 2.4f * m, 0.5f * m, "steel"), "nx_locker"));
+            for (int v = 0; v < 3; v++) Box(f, "Vent", x, f.y + 2.1f * m - v * 0.18f, f.zb - 0.5f * m - 0.12f, 0.6f, 0.06f, 0.02f, "dark");
+        }
+        // 3: square column just proud of the back wall, floor to ceiling
+        filmStructures.Add(Box(f, "Column", u(0.36f), f.y + 4.5f, f.zb - 0.225f * m, 0.45f * m, 9f, 0.45f * m, "panel"));
+        // 4: emblem door in the back wall, 1.8 x 2.4 m, hazard-striped foot, red header
+        float ex = u(0.475f);
+        Box(f, "EmblemDoorFrame", ex, f.y + 1.2f * m + 0.1f, f.zb - 0.08f, 1.8f * m + 0.3f, 2.4f * m + 0.2f, 0.06f, "dark");
+        Box(f, "EmblemDoor", ex, f.y + 1.2f * m, f.zb - 0.12f, 1.8f * m, 2.4f * m, 0.04f, "panel");
+        var ea = Box(f, "EmblemA", ex - 0.4f, f.y + 1.4f * m, f.zb - 0.15f, 0.35f, 1.6f, 0.02f, "red"); ea.transform.rotation = Quaternion.Euler(0, 0, 35f);
+        var eb = Box(f, "EmblemB", ex + 0.4f, f.y + 1.4f * m, f.zb - 0.15f, 0.35f, 1.6f, 0.02f, "red"); eb.transform.rotation = Quaternion.Euler(0, 0, -35f);
+        for (int k = 0; k < 6; k++) Box(f, "EmblemHazard", ex - 1.1f + k * 0.45f, f.y + 0.2f, f.zb - 0.15f, 0.22f, 0.3f, 0.02f, k % 2 == 0 ? "red" : "dark");
+        Box(f, "EmblemHeader", ex, f.y + 2.4f * m + 0.35f, f.zb - 0.1f, 1.8f * m + 0.3f, 0.3f, 0.08f, "lit");
+        // 6: wall cabinet at chest height
+        filmStructures.Add(Box(f, "WallCabinet", u(0.60f), f.y + 0.7f * m, f.zb - 0.25f * m - 0.05f, 0.7f * m, 1.4f * m, 0.5f * m, "panel"));
+        // 7: two red spotlight cones from the ceiling, over the lockers and over the door; shoot the lamp, the cone goes
+        int li = 0;
+        foreach (var a in new[] { 0.25f, 0.50f })
+        {
+            float x = u(a), lz = f.zb - 1.2f * m;
+            Box(f, "Lamp", x, f.y + 6.3f, lz, 1.0f, 0.3f, 0.6f, "dark");
+            var glow = Box(f, "LampGlow", x, f.y + 6.13f, lz, 0.8f, 0.04f, 0.4f, "screen");
+            var dead = Box(f, "LampDead", x, f.y + 6.13f, lz, 0.8f, 0.04f, 0.4f, "black");
+            var beam = new GameObject("Beam");
+            beam.transform.SetParent(f.Parent, false);
+            beam.transform.position = new Vector3(x, f.y, lz);
+            beam.transform.localScale = new Vector3(1.8f * m, 6.1f, 1f);
+            beam.AddComponent<MeshFilter>().sharedMesh = BeamMesh();
+            var r = beam.AddComponent<MeshRenderer>();
+            r.sharedMaterial = f.M["beam"];
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            Breakable(f, "Spot" + li++, new Vector3(x, f.y + 6.2f, lz), new Vector3(1.0f, 0.4f, 0.8f),
+                new List<GameObject> { glow, beam }, new List<GameObject> { dead }, LampHits, "", LampBreakSound);
+        }
+        // 8-9: free-standing cabinet and the lower crate beside it, the right half's cover
+        filmStructures.Add(Box(f, "FreeCabinet", u(0.64f), f.y + 0.8f * m, f.zb - 1.5f * m, 1.4f * m, 1.6f * m, 1.0f * m, "panel"));
+        Box(f, "FreeCabinetSeam", u(0.64f), f.y + 0.8f * m, f.zb - 2.0f * m - 0.03f, 0.05f, 1.5f * m, 0.02f, "dark");
+        filmStructures.Add(Box(f, "LowCrate", u(0.53f), f.y + 0.45f * m, f.zb - 2.0f * m, 1.1f * m, 0.9f * m, 1.0f * m, "panel"));
+        Box(f, "LowCrateStrap", u(0.53f), f.y + 0.45f * m, f.zb - 2.0f * m, 0.18f, 0.9f * m + 0.02f, 1.0f * m + 0.02f, "red");
+        // 10: wall box on a vertical pipe, a hose loop under it
+        float wx = u(0.83f);
+        Box(f, "WallPipe", wx, f.y + 4.5f, f.zb - 0.12f, 0.15f, 9f, 0.15f, "steel");
+        Box(f, "WallBox", wx, f.y + 1.9f * m, f.zb - 0.25f, 0.7f * m, 0.55f * m, 0.3f, "dark");
+        var hose = Box(f, "Hose", wx + 0.3f, f.y + 1.3f * m, f.zb - 0.2f, 0.08f, 1.0f, 0.08f, "black"); hose.transform.rotation = Quaternion.Euler(0, 0, 20f);
+        // 11: steps with a landing at the right (u 0.77, not the film 0.88, to stay 3.5 units clear of the right-wall door), rise 0.45 m, 1.4 m wide: one solid stepped block, not a route
+        float sx = u(0.77f), sw = 1.4f * m, rise = 0.45f * m, tread = 0.45f * m;
+        var landing = Box(f, "StepLanding", sx, f.y + rise / 2, f.zb - 0.6f * m, sw, rise, 1.2f * m, "panel");
+        filmStructures.Add(landing);
+        // the treads are under Solidify's 0.8 height floor, so one collider covers landing and treads (solid, not a route)
+        float run = 1.2f * m + 4f * tread;
+        var sc = landing.AddComponent<BoxCollider>();
+        sc.size = new Vector3(1f, 1f, run / (1.2f * m)); sc.center = new Vector3(0f, 0f, -(run - 1.2f * m) / 2f / (1.2f * m));
+        landing.layer = ObstacleLayer; solidCount++;
+        Box(f, "StepLandingEdge", sx, f.y + rise + 0.02f, f.zb - 1.2f * m + 0.06f, sw + 0.02f, 0.04f, 0.12f, "red");
+        for (int k = 1; k <= 4; k++)
+        {
+            float h = rise * (1f - k / 5f), z = f.zb - 1.2f * m - (k - 0.5f) * tread;
+            filmStructures.Add(Box(f, "Step", sx, f.y + h / 2, z, sw, h, tread, k % 2 == 0 ? "panel" : "steel"));
+            Box(f, "StepNose", sx, f.y + h + 0.01f, z - tread / 2 + 0.05f, sw + 0.02f, 0.03f, 0.1f, k % 2 == 0 ? "red" : "white");
+        }
     }
 
     // 9: break room: serving counter under a row of glowing menu panels, tables, a drum.
