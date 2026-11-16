@@ -1281,9 +1281,60 @@ public static class NexusProminenceBuilder
         // 7, 8: the back doorway and the left-wall door are left out (fake doors stay off; doors unchanged)
     }
 
+    // ---- Film geometry, room 3 (build zze): the film's controls office, 2:36-3:18 (structure sheet
+    // ai-docs/notes/film-geometry/room-03-controls-office.md). 1 m = 1.5 units. Solid on the one floor: the counter
+    // (u 0.12-0.48, 1.0 m tall, 0.6 m deep) standing 0.9 m clear of the back wall so defenders fit behind it, and
+    // the low kerb along the back wall right of it (0.45 m, a solid plinth, not a step: prompt C1). Backdrop: the red
+    // window over the counter, the pilaster at u 0.11, the wall block at u 0.50, the closed door under the
+    // "controls" sign at u 0.60 (it never opens in the film), the notice and the tilted poster. The entry doorway at
+    // the left stays BackDoorway (FakeDoors off: not built). Removed under the toggle: the right-of-centre window
+    // and counter, filing cabinets, banner, clock, notices. Set false to build zzd's office.
+    const bool FilmRoom3Structures = true;
+    static void FilmOffice(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float m = 1.5f, zb = f.zb;
+        // 1: red window u 0.15-0.48, sill 1.35 m up, 1.8 m tall, set back in a dark frame
+        float w0 = u(0.15f), w1 = u(0.48f), wy = f.y + 1.35f * m, wh = 1.8f * m;
+        Box(f, "BackWindow", (w0 + w1) / 2, wy + wh / 2, zb - 0.04f, w1 - w0, wh, 0.03f, "screen");
+        Box(f, "BackWindowFrame", (w0 + w1) / 2, wy - 0.1f, zb - 0.12f, w1 - w0, 0.2f, 0.16f, "dark");
+        Box(f, "BackWindowFrame", (w0 + w1) / 2, wy + wh + 0.1f, zb - 0.12f, w1 - w0, 0.2f, 0.16f, "dark");
+        // 2: counter, 1.0 m tall, 0.6 m deep, 0.9 m clear of the wall (a walkway behind it)
+        float c0 = u(0.15f), c1 = u(0.48f), ch = 1.0f * m, cd = 0.6f * m, cz = zb - 0.9f * m - cd / 2;
+        var counter = Model(Box(f, "Counter", (c0 + c1) / 2, f.y + ch / 2, cz, c1 - c0, ch, cd, "panel"), "nx_counter");
+        if (counter.GetComponent<BoxCollider>() == null) { counter.AddComponent<BoxCollider>(); counter.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(counter);
+        Box(f, "CounterTop", (c0 + c1) / 2, f.y + ch + 0.05f, cz, c1 - c0 + 0.3f, 0.1f, cd + 0.2f, "dark");
+        // 4: pilaster at u 0.11, 0.9 m wide, 0.2 m proud, skirting wrapped; 8: wall block at u 0.50, 0.7 m wide
+        foreach (var (a, w) in new[] { (0.11f, 0.9f), (0.50f, 0.7f) })
+        {
+            Box(f, "WallPier", u(a), f.y + 4.5f, zb - 0.15f, w * m, 9f, 0.3f, "wall");
+            Box(f, "WallPierSkirt", u(a), f.y + 0.2f, zb - 0.15f, w * m + 0.06f, 0.4f, 0.36f, "red");
+        }
+        // 6: low kerb from the wall block to near the right corner, 0.45 m high, 0.9 m deep; solid plinth, its own collider
+        float k0 = u(0.53f), k1 = u(KerbEnd), kh = 0.45f * m, kd = 0.9f * m;
+        var kerb = Box(f, "Kerb", (k0 + k1) / 2, f.y + kh / 2, zb - kd / 2, k1 - k0, kh, kd, "panel");
+        if (kerb.GetComponent<BoxCollider>() == null) { kerb.AddComponent<BoxCollider>(); kerb.layer = ObstacleLayer; solidCount++; }
+        filmStructures.Add(kerb);
+        Box(f, "KerbEdge", (k0 + k1) / 2, f.y + kh + 0.02f, zb - kd + 0.06f, k1 - k0, 0.04f, 0.12f, "red");
+        // 5: closed emblem door under the "controls" sign at u 0.60, hazard sill, sign plate 1.6 x 0.35 m at 2.9 m
+        float dx = u(0.60f), dw = 1.4f * m, dh = 2.4f * m;
+        Box(f, "SignDoorFrame", dx, f.y + kh + dh / 2 + 0.03f, zb - 0.1f, dw + 0.3f, dh, 0.06f, "dark");
+        Box(f, "SignDoorPanel", dx, f.y + kh + dh / 2, zb - 0.14f, dw, dh, 0.04f, "panel");
+        for (int k = 0; k < 5; k++) Box(f, "SignDoorSill", dx - dw / 2 + (k + 0.5f) * dw / 5, f.y + kh + 0.12f, zb - 0.17f, dw / 5, 0.24f, 0.03f, k % 2 == 0 ? "red" : "dark");
+        Box(f, "ControlsSign", dx, f.y + 2.9f * m + 0.3f, zb - 0.12f, 1.6f * m, 0.35f * m, 0.06f, "white");
+        // flat dressing: notice at u 0.53, tilted recruiting poster at u 0.87
+        Box(f, "NoticeA", u(0.535f), f.y + 1.8f * m + 0.9f, zb - 0.1f, 0.8f, 0.8f, 0.04f, "panel");
+        var bill = Box(f, "Bill", u(0.87f), f.y + 1.6f * m + 0.6f, zb - 0.1f, 2.2f, 1.2f, 0.04f, "white");
+        bill.transform.rotation = Quaternion.Euler(0f, 0f, 6f);
+        BackDoorway(f, u(0.05f));
+    }
+    const float KerbEnd = 0.90f; // 3.5 units clear of the right-wall door (zze first pass: 0.95 failed the door gate)
+
     // 3: office with a long service counter, a glowing back window and a door marked by a red header.
     static void ControlsOffice(Frame f)
     {
+        if (FilmRoom3Structures) { FilmOffice(f); return; }
         // round 7 FilmRedFields: the film's office is one big red field from the counter top to the ceiling (2:41)
         if (FilmRedFields) Box(f, "BackWindow", f.Cx + 3f, f.y + 3.5f, f.zb - 0.06f, 12f, 3.8f, 0.04f, "screen");
         else Box(f, "BackWindow", f.Cx + 3f, f.y + 3.2f, f.zb - 0.06f, 12f, 3.2f, 0.04f, "screen");
