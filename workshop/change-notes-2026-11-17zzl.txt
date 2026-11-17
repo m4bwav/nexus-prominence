@@ -1,0 +1,2 @@
+- Spike traps now shoot up: in the shutter garage and the spotlight corridor steel blades snap up out of the red slots, stay up a moment and sink back, and the hit lands as they rise.
+- Same rooms and layout as the last update otherwise.
