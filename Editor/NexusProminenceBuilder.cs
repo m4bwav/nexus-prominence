@@ -413,6 +413,56 @@ public static class NexusProminenceBuilder
         return beamMesh;
     }
 
+    // zzh (owner's glitch shot 3: "flat cards with no depth"): the lamp cone as a real volume. A frustum (top radius
+    // 0.15, bottom 0.5, unit height) whose vertex colours are brightest at the silhouette sides and the lamp and
+    // fade toward the floor, so the additive shader (Cull Off, both walls drawn) reads as a lit cone from the game
+    // camera, plus a soft pool on the floor (bright centre fading to nothing at 0.75) 0.013 up the unit height, above
+    // every paper and splat. Rebuilt each build. Same renderer as the old card, so shooting the lamp still hides it.
+    static Mesh coneMesh;
+    static Mesh ConeMesh()
+    {
+        if (coneMesh != null) return coneMesh;
+        string path = MatDir + "/NX_ConeMesh.asset";
+        if (AssetDatabase.LoadAssetAtPath<Mesh>(path) != null) AssetDatabase.DeleteAsset(path);
+        const int N = 32; float[] ys = { 1f, 0.7f, 0.4f, 0f };
+        var v = new List<Vector3>(); var c = new List<Color>(); var tri = new List<int>();
+        for (int j = 0; j < ys.Length; j++)
+            for (int i = 0; i <= N; i++)
+            {
+                float a = i * Mathf.PI * 2f / N, r = Mathf.Lerp(0.5f, 0.15f, ys[j]);
+                v.Add(new Vector3(Mathf.Sin(a) * r, ys[j], -Mathf.Cos(a) * r));
+                float rim = 0.25f + 0.75f * Mathf.Pow(Mathf.Abs(Mathf.Sin(a)), 2f), k = 0.55f * rim * Mathf.Lerp(0.3f, 1f, ys[j]);
+                c.Add(new Color(k, k, k, k));
+            }
+        for (int j = 0; j + 1 < ys.Length; j++)
+            for (int i = 0; i < N; i++)
+            {
+                int a = j * (N + 1) + i, b = a + N + 1;
+                tri.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
+            }
+        float py = 0.013f; int ctr = v.Count;
+        v.Add(new Vector3(0f, py, 0f)); c.Add(new Color(0.8f, 0.8f, 0.8f, 0.8f));
+        float[] rings = { 0.45f, 0.75f }, glow = { 0.4f, 0f };
+        for (int q = 0; q < 2; q++)
+            for (int i = 0; i <= N; i++)
+            {
+                float a = i * Mathf.PI * 2f / N;
+                v.Add(new Vector3(Mathf.Sin(a) * rings[q], py, -Mathf.Cos(a) * rings[q])); c.Add(new Color(glow[q], glow[q], glow[q], glow[q]));
+            }
+        int r0 = ctr + 1, r1 = r0 + N + 1;
+        for (int i = 0; i < N; i++)
+        {
+            tri.AddRange(new[] { ctr, r0 + i + 1, r0 + i });
+            tri.AddRange(new[] { r0 + i, r0 + i + 1, r1 + i, r0 + i + 1, r1 + i + 1, r1 + i });
+        }
+        coneMesh = new Mesh { name = "NX_ConeMesh" };
+        coneMesh.SetVertices(v); coneMesh.SetColors(c); coneMesh.SetTriangles(tri, 0);
+        coneMesh.uv = v.Select(q => new Vector2(q.x + 0.5f, q.y)).ToArray();
+        coneMesh.RecalculateNormals(); coneMesh.RecalculateBounds();
+        AssetDatabase.CreateAsset(coneMesh, path);
+        return coneMesh;
+    }
+
     static Bounds FloorBounds(RoomObj room)
     {
         var floors = room.GetComponentsInChildren<Collider>(true).Where(c => c.CompareTag("Floor")).ToArray();
@@ -778,7 +828,7 @@ public static class NexusProminenceBuilder
             case 8: // a lit arrow on the back wall pointing the way on (the film's break room has an arrow sign)
                 Box(f, "ArrowShaft", f.x0 + 9f, f.y + 3.3f, f.zb - 0.1f, 1.6f, 0.25f, 0.06f, "screen");
                 Box(f, "ArrowHeadA", f.x0 + 9.85f, f.y + 3.47f, f.zb - 0.1f, 0.6f, 0.22f, 0.06f, "screen").transform.rotation = Quaternion.Euler(0, 0, -40f);
-                Box(f, "ArrowHeadB", f.x0 + 9.85f, f.y + 3.13f, f.zb - 0.1f, 0.6f, 0.22f, 0.06f, "screen").transform.rotation = Quaternion.Euler(0, 0, 40f);
+                Box(f, "ArrowHeadB", f.x0 + 9.85f, f.y + 3.13f, f.zb - 0.105f, 0.6f, 0.22f, 0.06f, "screen").transform.rotation = Quaternion.Euler(0, 0, 40f);
                 break;
         }
     }
@@ -958,12 +1008,12 @@ public static class NexusProminenceBuilder
                 float z1 = Mathf.Min(gz - 1.5f, f.zb);
                 if (z1 - z0 > 0.2f)
                 {
-                    Box(f, "Band_" + s, x, f.y + bandLo + bandH / 2, (z0 + z1) / 2, 0.12f, bandH, z1 - z0, bandMat);
-                    Box(f, "Skirt_" + s, x, f.y + 0.14f, (z0 + z1) / 2, 0.12f, 0.28f, z1 - z0, "red");
+                    Box(f, "Band_" + s, x, f.y + bandLo + bandH / 2, (z0 + z1) / 2, 0.12f, bandH + 0.02f, z1 - z0, bandMat); // zzh: 0.01 past the back band at both edges (S26)
+                    Box(f, "Skirt_" + s, x, f.y + 0.145f, (z0 + z1) / 2, 0.12f, 0.29f, z1 - z0, "red");
                 }
                 z0 = gz + 1.5f;
             }
-            Box(f, "Seam_" + s, x + side * -0.35f, f.y + 0.01f, f.Cz, 0.18f, 0.02f, f.D, "red");
+            Box(f, "Seam_" + s, x + side * -0.35f, f.y + 0.013f, f.Cz, 0.18f, 0.02f, f.D, "red");
         }
         // back wall panels (pilasters) and the pipe along the top, as in the corridor shots
         for (float x = f.x0 + 4f; x < f.x1 - 2f; x += 7.5f)
@@ -1002,7 +1052,7 @@ public static class NexusProminenceBuilder
         }
         for (int i = 0; i < (int)(f.W / 4f); i++)
         {
-            var paper = Box(f, "Paper", f.x0 + 2f + (float)rng.NextDouble() * (f.W - 4f), f.y + 0.012f, f.zf + 1f + (float)rng.NextDouble() * (f.D - 3f), 0.5f, 0.004f, 0.65f, "white");
+            var paper = Box(f, "Paper", f.x0 + 2f + (float)rng.NextDouble() * (f.W - 4f), PaperY(f), f.zf + 1f + (float)rng.NextDouble() * (f.D - 3f), 0.5f, 0.004f, 0.65f, "white");
             paper.transform.rotation = Quaternion.Euler(0, (float)rng.NextDouble() * 180f, 0);
         }
         // door frames: black opening, dark jambs, red-and-dark hazard bar above
@@ -1015,7 +1065,7 @@ public static class NexusProminenceBuilder
             Box(f, "DoorHole", x, f.y + 1.9f, p.z, 0.05f, 3.8f, 2.6f, "black");
             Box(f, "DoorJambA", x + inward * 0.1f, f.y + 2.0f, p.z - 1.4f, 0.2f, 4.0f, 0.22f, "dark");
             Box(f, "DoorJambB", x + inward * 0.1f, f.y + 2.0f, p.z + 1.4f, 0.2f, 4.0f, 0.22f, "dark");
-            Box(f, "DoorHeader", x + inward * 0.1f, f.y + 4.05f, p.z, 0.2f, 0.22f, 3.0f, "dark");
+            Box(f, "DoorHeader", x + inward * 0.1f, f.y + 4.05f, p.z, 0.24f, 0.22f, 3.0f, "dark");
             for (int k = 0; k < 5; k++)
                 Box(f, "Hazard", x + inward * 0.08f, f.y + 4.55f, p.z - 1.2f + k * 0.6f, 0.08f, 0.4f, 0.3f, k % 2 == 0 ? "red" : "dark");
         }
@@ -1037,12 +1087,13 @@ public static class NexusProminenceBuilder
         // back: one window almost wall to wall
         float wx0 = FilmRoom1Structures ? f.x0 + 0.09f * f.W : f.x0 + 1.4f, wx1 = FilmRoom1Structures ? f.x0 + 0.79f * f.W : f.x1 - 1.4f, wy0 = f.y + 1.4f, wy1 = f.y + 6.8f, wz = f.zb - 0.05f;
         Box(f, "Window_Sky", (wx0 + wx1) / 2, (wy0 + wy1) / 2, wz, wx1 - wx0, wy1 - wy0, 0.04f, "sky");
+        int towerN = 0;
         for (float x = wx0 + 0.2f; x < wx1 - 0.6f; )
         {
             float w = 1.0f + (float)rng.NextDouble() * 1.8f;
             float h = 2.4f + (float)rng.NextDouble() * 3.0f;
             float cx = Mathf.Min(x + w / 2, wx1 - w / 2);
-            Box(f, "Tower", cx, wy0 + h / 2, wz - 0.05f, w, h, 0.04f, rng.NextDouble() < 0.5 ? "black" : "dark");
+            Box(f, "Tower", cx, wy0 + h / 2, wz - 0.06f - 0.004f * (towerN++ % 2), w, h, 0.04f, rng.NextDouble() < 0.5 ? "black" : "dark"); // zzh: front 0.01 before the band (owner's glitch shot 7)
             for (float yy = wy0 + 0.3f; yy < wy0 + h - 0.3f; yy += 0.4f)
                 for (float xx = cx - w / 2 + 0.2f; xx < cx + w / 2 - 0.15f; xx += 0.3f)
                     if (rng.NextDouble() < 0.6) Box(f, "LitWin", xx, yy, wz - 0.08f, 0.14f, 0.2f, 0.02f, "lit");
@@ -1081,7 +1132,7 @@ public static class NexusProminenceBuilder
         }
         // a flat charcoal facing over the template wall's red-and-black trim, then the skirting again
         Box(f, "FacingL", f.x0 + 0.03f, f.y + 3.6f, f.Cz, 0.04f, 7.2f, f.D + 1f, "wall");
-        Box(f, "SkirtL2", f.x0 + 0.07f, f.y + 0.14f, f.Cz, 0.06f, 0.28f, f.D + 1f, "red");
+        Box(f, "SkirtL2", f.x0 + 0.07f, f.y + 0.155f, f.Cz, 0.06f, 0.31f, f.D + 1f, "red");
         for (float z = f.zb - 2.5f; z > f.zf + 0.5f; z -= 2.5f)
             Box(f, "PanelSeamL", f.x0 + 0.1f, f.y + 3.4f, z, 0.03f, 6.8f, 0.06f, "dark");
         Box(f, "PanelRailL", f.x0 + 0.1f, f.y + 0.9f, f.Cz, 0.04f, 0.06f, f.D, "dark");
@@ -1219,7 +1270,7 @@ public static class NexusProminenceBuilder
         Box(f, "WallPanel", (p0 + p1) / 2, f.y + ph / 2, zb - 0.06f, p1 - p0, ph, 0.04f, "panel");
         Box(f, "PanelFrameFoot", (p0 + p1) / 2, f.y + st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
         Box(f, "PanelFrameTop", (p0 + p1) / 2, f.y + ph - st / 2, zb - 0.1f, p1 - p0, st, 0.06f, "red");
-        foreach (var x in new[] { p0 + st / 2, p1 - st / 2 }) Box(f, "PanelFrameEnd", x, f.y + ph / 2, zb - 0.1f, st, ph, 0.06f, "red");
+        foreach (var x in new[] { p0 + st / 2, p1 - st / 2 }) Box(f, "PanelFrameEnd", x, f.y + ph / 2, zb - 0.105f, st + 0.02f, ph + 0.02f, 0.07f, "red");
         // 1: the wanted case, 1.3 x 1.6 m, bottom 0.5 m up, 0.2 m proud, lit portrait and a name plate; feed line to the ceiling
         float cx = u(0.24f), cw = 1.3f * m, chh = 1.6f * m, cb = f.y + 0.5f * m, cd = 0.2f * m;
         Box(f, "WantedCase", cx, cb + chh / 2, zb - 0.1f - cd / 2, cw, chh, cd, "dark");
@@ -1234,8 +1285,8 @@ public static class NexusProminenceBuilder
         Box(f, "WallBlockEdge", bx, f.y + 4.5f, zb - bw - 0.02f, bw, 9f, 0.04f, "red");
         // 5: recessed bay at u 0.57: dark panel in a red frame, hazard sill 0.45 m up, chamfered red header bar
         float yx = u(0.57f), yw = 1.6f * m, yh = 2.0f * m, ys = f.y + 0.45f * m;
-        Box(f, "BayPanel", yx, ys + yh / 2, zb - 0.03f, yw, yh, 0.02f, "black");
-        foreach (var x in new[] { yx - yw / 2 - 0.1f, yx + yw / 2 + 0.1f }) Box(f, "BayFrame", x, ys + yh / 2, zb - 0.08f, 0.2f, yh + 0.2f, 0.1f, "red");
+        Box(f, "BayPanel", yx, ys + yh / 2, zb - 0.135f, yw, yh, 0.02f, "black"); // zzh: in front of the wall band (owner's glitch shot 6)
+        foreach (var x in new[] { yx - yw / 2 - 0.1f, yx + yw / 2 + 0.1f }) Box(f, "BayFrame", x, ys + yh / 2, zb - 0.11f, 0.2f, yh + 0.2f, 0.1f, "red");
         for (int k = 0; k < 6; k++) Box(f, "BaySill", yx - yw / 2 + (k + 0.5f) * yw / 6, ys - 0.08f, zb - 0.12f, yw / 6, 0.16f, 0.16f, k % 2 == 0 ? "red" : "dark");
         var hdr = Box(f, "BayHeader", yx, ys + yh + 0.25f, zb - 0.15f, yw + 0.6f, 0.3f, 0.25f, "red");
         hdr.transform.rotation = Quaternion.Euler(-20f, 0f, 0f);
@@ -1250,10 +1301,10 @@ public static class NexusProminenceBuilder
         }
         Box(f, "VendingTop", vx, f.y + vh + 0.1f, vz, vw + 0.4f, 0.2f, vd + 0.1f, "red");
         float gz = zb - vd - 0.08f;
-        var glass = Box(f, "VendingGlass", vx - 0.2f, f.y + vh * 0.55f, gz, vw - 0.8f, vh * 0.6f, 0.03f, "glass");
+        var glass = Box(f, "VendingGlass", vx - 0.2f, f.y + vh * 0.55f, gz + 0.005f, vw - 0.8f, vh * 0.6f, 0.03f, "glass");
         Box(f, "VendingKeypad", vx + vw / 2 - 0.3f, f.y + vh * 0.55f, gz, 0.3f, 0.5f, 0.02f, "steel");
         Box(f, "VendingItem", vx - 0.2f, f.y + vh * 0.55f, gz + 0.02f, 0.5f, 0.4f, 0.02f, "white"); // the first aid kit
-        var shards = new List<GameObject> { Box(f, "VendingGlassRim", vx - 0.2f, f.y + vh * 0.82f, gz, vw - 0.8f, 0.2f, 0.03f, "glass") };
+        var shards = new List<GameObject> { Box(f, "VendingGlassRim", vx - 0.2f, f.y + vh * 0.82f, gz, vw - 0.82f, 0.2f, 0.03f, "glass") };
         for (int k = 0; k < 5; k++)
         {
             var s = Box(f, "Shard", vx - 0.9f + k * 0.45f, f.y + 0.02f, gz - 0.3f - (k % 3) * 0.25f, 0.3f - (k % 2) * 0.12f, 0.02f, 0.18f, "glass");
@@ -1446,8 +1497,16 @@ public static class NexusProminenceBuilder
         Box(f, "BackDeckFace", (dx0 + dx1) / 2, f.y + dh / 2, f.zb - dd - 0.02f, dx1 - dx0, 0.12f, 0.02f, "red");
         // 3: the deck's sloped end at the right, down toward the right (a wedge turned round)
         float rl = 2.4f * m;
-        var ramp = Wedge(f, "DeckSlope", dx1 + rl / 2, f.y, f.zb - dd / 2, rl, dh, dd, 0.0f, "panel", true);
+        var ramp = Wedge(f, "DeckSlope", dx1 + rl / 2, f.y, f.zb - dd / 2, rl, dh, dd, 0.0f, FilmRoom4Walkable ? "steel" : "panel", true);
         ramp.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        if (FilmRoom4Walkable)
+        {
+            // zzh (owner, glitch shot 4: "still no ramp"): the slope was panel grey on a panel grey deck and read as
+            // nothing from the game camera. Steel face and the deck's red edge carried down the slope's front edge.
+            float sa = Mathf.Atan2(dh, rl) * Mathf.Rad2Deg, sl = Mathf.Sqrt(rl * rl + dh * dh);
+            var se = Box(f, "DeckSlopeEdge", dx1 + rl / 2, f.y + dh / 2 + 0.02f, f.zb - dd + 0.06f, sl, 0.04f, 0.12f, "red");
+            se.transform.rotation = Quaternion.Euler(0f, 0f, -sa);
+        }
         if (FilmRoom4Walkable) DeckRamp(f, dx1, rl, dh, dd);
         else
         {
@@ -1521,8 +1580,8 @@ public static class NexusProminenceBuilder
         Box(f, "PierBand", px, f.y + 1.6f, f.zb - pd / 2, pw + 0.06f, 0.55f, pd + 0.06f, "red");
         Box(f, "PierBand", px, deck + 0.5f, f.zb - pd / 2, pw + 0.06f, 0.55f, pd + 0.06f, "red");
         // 5: red band turned upright left of the balcony, a second band at deck level (the pier carries the band in the recess)
-        Box(f, "BandRise", u(0.60f), (f.y + 1.6f + deck + 0.75f) / 2, f.zb - 0.07f, 0.5f * m, deck + 0.75f - f.y - 1.6f, 0.1f, "red");
-        Box(f, "BandHigh", (u(0.60f) + u(0.93f)) / 2, deck + 0.5f, f.zb - 0.07f, u(0.93f) - u(0.60f), 0.55f, 0.1f, "red");
+        Box(f, "BandRise", u(0.60f), (f.y + 1.6f + deck + 0.75f) / 2, f.zb - 0.08f, 0.5f * m, deck + 0.75f - f.y - 1.6f, 0.12f, "red"); // zzh: front 0.02 before the wall band (owner's glitch shot 2)
+        Box(f, "BandHigh", (u(0.60f) + u(0.93f)) / 2, deck + 0.5f, f.zb - 0.085f, u(0.93f) - u(0.60f) - 0.02f, 0.53f, 0.13f, "red");
         // 6: the sloped low wall, 4 m x 1.3 m x 0.45 m, diagonal from the back wall out toward the camera,
         // the slope toward the way in (left), red top edge; the guards hold behind it
         var p0 = new Vector3(u(0.50f), 0f, f.zb - 0.5f * m); var p1 = new Vector3(u(0.62f), 0f, f.zb - 4f * m);
@@ -1565,7 +1624,7 @@ public static class NexusProminenceBuilder
         Model2(Box(f, "Vending", f.x0 + 2.4f, f.y + 1.9f, f.zb - 0.7f, 1.6f, 3.8f, 1.2f, "dark"), "nx_vending");
         Box(f, "VendingFace", f.x0 + 2.4f, f.y + 2.3f, f.zb - 1.32f, 1.2f, 2.4f, 0.03f, "screen");
         Banner(f, f.x1 - 7f, f.y + 3.4f, f.zb - 0.1f, false);
-        foreach (var x in new[] { 0.3f, 0.55f, 0.75f }) Box(f, "OilStain", f.x0 + x * f.W, f.y + 0.01f, f.Cz + (x - 0.5f) * 3f, 1.6f, 0.006f, 1.0f, "stain");
+        foreach (var x in new[] { 0.3f, 0.55f, 0.75f }) Box(f, "OilStain", f.x0 + x * f.W, f.y + 0.006f, f.Cz + (x - 0.5f) * 3f, 1.6f, 0.006f, 1.0f, "stain");
         // owner's film frame (2026-11-11): tapered concrete pylons with a red band, a generator set on the back wall
         if (FilmRoom6Structures) PillarHall(f);
         else
@@ -1610,7 +1669,7 @@ public static class NexusProminenceBuilder
         // 8-9: the pylons at film size, far near the back wall, near one in front of it
         // the pylon body starts on its 0.24 plinth, so Solidify (floor pieces only) never gave zv's pylons a
         // collider: give the film pylons one over plinth and body, as tall as the body
-        foreach (var py in new[] { Pylon(f, u(0.70f), f.zb - 2.5f, 4.1f, 3.0f, 2.2f), Pylon(f, u(0.765f), f.zb - 7.0f, 3.2f, 2.7f, 2.0f) })
+        foreach (var py in new[] { Pylon(f, u(0.70f), f.zb - 2.5f, 4.1f, 3.0f, 2.2f), Pylon(f, u(0.765f), f.zb - 8.6f, 3.2f, 2.7f, 2.0f) }) // zzh: near pylon 1.6 further out, a 3-unit way between them (glitch shot 4)
         {
             if (py == null) continue;
             var bc = py.AddComponent<BoxCollider>();
@@ -1797,12 +1856,12 @@ public static class NexusProminenceBuilder
             float x = lampAt[i];
             Box(f, "Lamp", x, f.y + 6.3f, f.zb - 0.5f, 1.4f, 0.25f, 0.6f, "dark");
             var glow = Box(f, "LampGlow", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "screen");
-            var dead = Box(f, "LampDead", x, f.y + 6.16f, f.zb - 0.5f, 1.1f, 0.04f, 0.4f, "black");
+            var dead = Box(f, "LampDead", x, f.y + 6.155f, f.zb - 0.5f, 1.08f, 0.04f, 0.38f, "black"); // zzh: a hair inside the glow (S26)
             var beam = new GameObject("Beam");
             beam.transform.SetParent(f.Parent, false);
-            beam.transform.position = new Vector3(x, f.y, f.zb - 0.4f);
-            beam.transform.localScale = new Vector3(7f, 6.2f, 1f);
-            beam.AddComponent<MeshFilter>().sharedMesh = BeamMesh();
+            beam.transform.position = new Vector3(x, f.y, f.zb - 0.5f);
+            beam.transform.localScale = new Vector3(5f, 6.2f, 3f); // zzh: a volume; its back half is inside the wall
+            beam.AddComponent<MeshFilter>().sharedMesh = ConeMesh();
             var r = beam.AddComponent<MeshRenderer>();
             r.sharedMaterial = f.M["beam"];
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -1909,7 +1968,7 @@ public static class NexusProminenceBuilder
         Box(f, "EmblemDoorFrame", ex, f.y + 1.2f * m + 0.1f, f.zb - 0.08f, 1.8f * m + 0.3f, 2.4f * m + 0.2f, 0.06f, "dark");
         Box(f, "EmblemDoor", ex, f.y + 1.2f * m, f.zb - 0.12f, 1.8f * m, 2.4f * m, 0.04f, "panel");
         var ea = Box(f, "EmblemA", ex - 0.4f, f.y + 1.4f * m, f.zb - 0.15f, 0.35f, 1.6f, 0.02f, "red"); ea.transform.rotation = Quaternion.Euler(0, 0, 35f);
-        var eb = Box(f, "EmblemB", ex + 0.4f, f.y + 1.4f * m, f.zb - 0.15f, 0.35f, 1.6f, 0.02f, "red"); eb.transform.rotation = Quaternion.Euler(0, 0, -35f);
+        var eb = Box(f, "EmblemB", ex + 0.4f, f.y + 1.4f * m, f.zb - 0.155f, 0.35f, 1.6f, 0.02f, "red"); eb.transform.rotation = Quaternion.Euler(0, 0, -35f);
         for (int k = 0; k < 6; k++) Box(f, "EmblemHazard", ex - 1.1f + k * 0.45f, f.y + 0.2f, f.zb - 0.15f, 0.22f, 0.3f, 0.02f, k % 2 == 0 ? "red" : "dark");
         Box(f, "EmblemHeader", ex, f.y + 2.4f * m + 0.35f, f.zb - 0.1f, 1.8f * m + 0.3f, 0.3f, 0.08f, "lit");
         // 6: wall cabinet at chest height
@@ -1921,12 +1980,12 @@ public static class NexusProminenceBuilder
             float x = u(a), lz = f.zb - 1.2f * m;
             Box(f, "Lamp", x, f.y + 6.3f, lz, 1.0f, 0.3f, 0.6f, "dark");
             var glow = Box(f, "LampGlow", x, f.y + 6.13f, lz, 0.8f, 0.04f, 0.4f, "screen");
-            var dead = Box(f, "LampDead", x, f.y + 6.13f, lz, 0.8f, 0.04f, 0.4f, "black");
+            var dead = Box(f, "LampDead", x, f.y + 6.125f, lz, 0.78f, 0.04f, 0.38f, "black");
             var beam = new GameObject("Beam");
             beam.transform.SetParent(f.Parent, false);
             beam.transform.position = new Vector3(x, f.y, lz);
-            beam.transform.localScale = new Vector3(1.8f * m, 6.1f, 1f);
-            beam.AddComponent<MeshFilter>().sharedMesh = BeamMesh();
+            beam.transform.localScale = new Vector3(1.8f * m, 6.1f, 1.8f * m); // zzh: a round volume, not a card
+            beam.AddComponent<MeshFilter>().sharedMesh = ConeMesh();
             var r = beam.AddComponent<MeshRenderer>();
             r.sharedMaterial = f.M["beam"];
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -1958,7 +2017,7 @@ public static class NexusProminenceBuilder
         {
             float h = rise * (1f - k / 5f), z = f.zb - 1.2f * m - (k - 0.5f) * tread;
             filmStructures.Add(Box(f, "Step", sx, f.y + h / 2, z, sw, h, tread, k % 2 == 0 ? "panel" : "steel"));
-            Box(f, "StepNose", sx, f.y + h + 0.01f, z - tread / 2 + 0.05f, sw + 0.02f, 0.03f, 0.1f, k % 2 == 0 ? "red" : "white");
+            Box(f, "StepNose", sx, f.y + h + 0.01f, z - tread / 2 + 0.04f, sw + 0.02f, 0.03f, 0.1f, k % 2 == 0 ? "red" : "white");
         }
     }
 
@@ -2102,7 +2161,7 @@ public static class NexusProminenceBuilder
             Box(f, "ScreenMount", sx, sy + 0.5f * m + 0.45f * m + 0.15f, sz, 0.12f, 0.9f * m, 0.12f, "dark");
             var cas = Box(f, "HungScreenCase", sx, sy, sz, 1.4f * m + 0.15f, 1.0f * m + 0.15f, 0.2f, "black");
             var scr = Box(f, "HungScreen", sx, sy, sz - 0.12f, 1.4f * m, 1.0f * m, 0.02f, face);
-            var dead = Box(f, "HungScreenDead", sx, sy, sz - 0.12f, 1.4f * m, 1.0f * m, 0.02f, "black");
+            var dead = Box(f, "HungScreenDead", sx, sy, sz - 0.115f, 1.4f * m - 0.02f, 1.0f * m - 0.02f, 0.02f, "black");
             var crack = Box(f, "HungScreenCrack", sx, sy, sz - 0.14f, 1.6f, 0.04f, 0.01f, "steel");
             crack.transform.rotation = Quaternion.Euler(0f, 0f, 25f); // hung flat, not tilted: a tilt crossed the case (overlap scan)
             Breakable(f, "HungScreen" + a, new Vector3(sx, sy, sz - 0.1f), new Vector3(1.4f * m, 1.0f * m, 0.2f),
@@ -2110,11 +2169,11 @@ public static class NexusProminenceBuilder
         }
         // 6: tall red light panel, 0.65 x 3.1 m, bottom at 1.0 m
         float lx = u(0.735f), ly = f.y + 1.0f * m + 1.55f * m;
-        Box(f, "RedPanelFrame", lx, ly, f.zb - 0.08f, 0.65f * m + 0.3f, 3.1f * m + 0.3f, 0.08f, "dark");
+        Box(f, "RedPanelFrame", lx, ly, f.zb - 0.09f, 0.65f * m + 0.3f, 3.1f * m + 0.3f, 0.08f, "dark");
         Box(f, "RedPanel", lx, ly, f.zb - 0.14f, 0.65f * m, 3.1f * m, 0.03f, "screen");
         // 7: low bench, 2.9 x 0.7 x 0.6 m, on a floor mat (a mat, not a step: the sheet's reading)
         float bx = u(0.57f), bz = f.zb - 0.6f * m - 0.2f;
-        Box(f, "BenchMat", u(0.67f), f.y + 0.006f, f.zb - 1.65f * m, 7.8f * m, 0.008f, 2.7f * m, "dark");
+        Box(f, "BenchMat", u(0.67f), f.y + 0.0015f, f.zb - 1.65f * m, 7.8f * m, 0.003f, 2.7f * m, "dark");
         filmStructures.Add(Box(f, "AdminBench", bx, f.y + 0.35f * m, bz, 2.9f * m, 0.7f * m, 0.6f * m, "panel"));
         Box(f, "AdminBenchLid", bx, f.y + 0.7f * m + 0.04f, bz, 2.9f * m + 0.08f, 0.08f, 0.6f * m + 0.08f, "dark");
         // 8: tower unit right of the bench
@@ -2140,7 +2199,7 @@ public static class NexusProminenceBuilder
             Box(f, "Banner", x + inward * 0.04f, y, z, 0.04f, h, w, "red");
             var a = Box(f, "BannerMarkA", x + inward * 0.07f, y + 0.1f, z - 0.3f, 0.02f, 1.2f, 0.25f, "dark");
             a.transform.rotation = Quaternion.Euler(35f, 0, 0);
-            var b = Box(f, "BannerMarkB", x + inward * 0.07f, y + 0.1f, z + 0.3f, 0.02f, 1.2f, 0.25f, "dark");
+            var b = Box(f, "BannerMarkB", x + inward * 0.075f, y + 0.1f, z + 0.3f, 0.02f, 1.2f, 0.25f, "dark");
             b.transform.rotation = Quaternion.Euler(-35f, 0, 0);
         }
         else
@@ -2149,7 +2208,7 @@ public static class NexusProminenceBuilder
             Box(f, "Banner", x, y, z - 0.04f, w, h, 0.04f, "red");
             var a = Box(f, "BannerMarkA", x - 0.3f, y + 0.1f, z - 0.07f, 0.25f, 1.2f, 0.02f, "dark");
             a.transform.rotation = Quaternion.Euler(0, 0, 35f);
-            var b = Box(f, "BannerMarkB", x + 0.3f, y + 0.1f, z - 0.07f, 0.25f, 1.2f, 0.02f, "dark");
+            var b = Box(f, "BannerMarkB", x + 0.3f, y + 0.1f, z - 0.075f, 0.25f, 1.2f, 0.02f, "dark");
             b.transform.rotation = Quaternion.Euler(0, 0, -35f);
         }
     }
@@ -2245,10 +2304,10 @@ public static class NexusProminenceBuilder
                 Box(f, "Edge", x + dx, f.y + h, z + dz, 0.15f, s, 0.15f, "dark");
         foreach (var dy in new[] { 0f, s })
         {
-            Box(f, "Edge", x, f.y + dy, z - h, s, 0.15f, 0.15f, "dark");
-            Box(f, "Edge", x, f.y + dy, z + h, s, 0.15f, 0.15f, "dark");
-            Box(f, "Edge", x - h, f.y + dy, z, 0.15f, 0.15f, s, "dark");
-            Box(f, "Edge", x + h, f.y + dy, z, 0.15f, 0.15f, s, "dark");
+            Box(f, "Edge", x, f.y + dy, z - h, s, 0.14f, 0.14f, "dark");
+            Box(f, "Edge", x, f.y + dy, z + h, s, 0.14f, 0.14f, "dark");
+            Box(f, "Edge", x - h, f.y + dy, z, 0.13f, 0.13f, s, "dark");
+            Box(f, "Edge", x + h, f.y + dy, z, 0.13f, 0.13f, s, "dark");
         }
         var brace = Box(f, "Brace", x, f.y + h, z - h, s * 1.35f, 0.12f, 0.12f, "dark");
         brace.transform.rotation = Quaternion.Euler(0, 0, 45);
@@ -2316,7 +2375,7 @@ public static class NexusProminenceBuilder
     static readonly string[] Strips = { "Pipe_Back", "Skirt", "PanelRail", "SkyStripFrame" };
     static readonly string[] Filler = { "Pilaster", "PipeClamp", "Conduit", "BandStripe", "DiagStripe", "PanelSeam", "WallPanelStripes", "FloorSeam", "Grate", "Paper", "Stain", "OilStain" };
     static readonly string[] Features = { "Door", "Window", "LitWin", "Poster", "Case", "Sign", "Banner", "Board", "Slate", "Shutter", "Vending",
-        "Notice", "Locker", "Menu", "Bill", "Vent", "Fridge", "Cabinet", "Rack", "Console", "Monitor", "Lamp", "Ledge", "Counter", "Pylon", "Pillar", "Barricade", "SlopeBlock", "Generator", "GasCan", "HazardSign", "Toolbox", "Hatch", "Crate", "Desk", "Table", "Bench", "Ladder" };
+        "Notice", "Locker", "Menu", "Bill", "Vent", "Fridge", "Cabinet", "Rack", "Console", "Monitor", "Lamp", "Ledge", "Counter", "Pylon", "Pillar", "Barricade", "SlopeBlock", "Generator", "GasCan", "HazardSign", "Toolbox", "Hatch", "Crate", "Desk", "Table", "Bench", "Ladder", "BayPanel", "BayFrame" }; // zzh: filler never crosses room 2's bay (glitch shot 6)
     static string Family(string name, string[] keys)
     {
         string n = name.StartsWith("NX_") ? name.Substring(3) : name;
@@ -2437,9 +2496,14 @@ public static class NexusProminenceBuilder
         q.isStatic = true;
     }
 
+    // zzh (owner's glitch shot 5, room 3): papers dropped at one height flickered over each other. Each paper takes
+    // the next of six heights 0.004 apart (tops 0.022 to 0.042, clear of grates at 0.018), so two overlapping papers
+    // never share a plane (mpn.py scene-lint S26 checks it).
+    static int paperN;
+    static float PaperY(Frame f) { return f.y + 0.02f + 0.004f * (paperN++ % 6); }
     static void Splat(Frame f, float u, float v, float size, int seed)
     {
-        Decal(f, "splat_" + (seed % 4), Mathf.Lerp(f.x0, f.x1, u), f.y + 0.035f + seed * 0.001f, Mathf.Lerp(f.zf, f.zb, v), size, size, true, seed * 47f);
+        Decal(f, "splat_" + (seed % 4), Mathf.Lerp(f.x0, f.x1, u), f.y + 0.05f + (seed % 6) * 0.003f, Mathf.Lerp(f.zf, f.zb, v), size, size, true, seed * 47f);
     }
     const float SignScale = 1.9f;
     // Back-wall areas already taken by the set (doors, pillars, posters, windows, cabinets) and by earlier
@@ -2628,14 +2692,14 @@ public static class NexusProminenceBuilder
                     }
                     for (int k = 0; k < 3; k++)
                     {
-                        var pp = Box(f, "DebrisPaper", cx + (R() - 0.5f) * 2.2f, f.y + 0.012f, cz + (R() - 0.5f) * 1.4f, 0.45f, 0.01f, 0.6f, "white");
+                        var pp = Box(f, "DebrisPaper", cx + (R() - 0.5f) * 2.2f, PaperY(f), cz + (R() - 0.5f) * 1.4f, 0.45f, 0.004f, 0.6f, "white");
                         pp.transform.rotation = Quaternion.Euler(0, R() * 180f, 0);
                     }
                     break;
                 default: // tipped bin with spilled trash
                     var bin = Box(f, "DebrisBin", cx, f.y + 0.3f, cz, 0.6f, 0.6f, 0.75f, "dark");
                     bin.transform.rotation = Quaternion.Euler(0, R() * 60f - 30f, 0);
-                    for (int k = 0; k < 4; k++) Box(f, "DebrisPaper", cx + 0.5f + R() * 1.2f, f.y + 0.012f, cz + (R() - 0.5f) * 0.9f, 0.35f, 0.01f, 0.4f, k % 2 == 0 ? "white" : "stain");
+                    for (int k = 0; k < 4; k++) Box(f, "DebrisPaper", cx + 0.5f + R() * 1.2f, PaperY(f), cz + (R() - 0.5f) * 0.9f, 0.35f, 0.004f, 0.4f, k % 2 == 0 ? "white" : "stain");
                     break;
             }
             placed++;
@@ -2969,7 +3033,10 @@ public static class NexusProminenceBuilder
         EditorUtility.SetDirty(a);
         // warning paint: a hazard-striped plate under the strip
         var q = go.transform.position;
-        for (int k = 0; k < 6; k++) Box(f, "SpikeHazard", q.x - 1.5f + k * 0.6f, f.y + 0.014f, q.z, 0.3f, 0.004f, 1.6f, k % 2 == 0 ? "red" : "dark");
+        // zzh (owner's glitch shot 1): the paint lay under the game's strip and its holed plate flickered through it.
+        // Now two striped bands frame the strip front and back and nothing is drawn under it.
+        foreach (var side in new[] { -1f, 1f })
+            for (int k = 0; k < 6; k++) Box(f, "SpikeHazard", q.x - 1.5f + k * 0.6f, f.y + 0.01f, q.z + side * 0.72f, 0.3f, 0.004f, 0.28f, k % 2 == 0 ? "red" : "dark");
     }
 
     static void ChainDoors(List<RoomObj> rooms)
