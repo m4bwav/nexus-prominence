@@ -1,0 +1,5 @@
+- Wanted hall: one big wanted case on a red-framed wall, a jutting wall block to hide behind, a recessed bay, a vending machine whose glass still breaks, and an open floor hatch with a raised rim.
+- Controls office: counter and red window left of centre with a walkway behind it, a low kerb along the back wall, a closed door under the CONTROLS sign.
+- Spotlight corridor: two shootable red spotlight cones, a framed screen, an emblem door, a louvre panel and grey wall blocks at both ends.
+- Break room: serving counter under a hatch and menu board, a red door frame and wall jog, a taped carton to hide behind.
+- Glitch fixes: no more flickering floor paint, wall stripe, skyline or papers; the red light cones are round 3D cones with a floor glow; the pillar hall's pylons stand far enough apart to walk between.
