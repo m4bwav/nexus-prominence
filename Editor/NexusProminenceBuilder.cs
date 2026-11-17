@@ -3153,9 +3153,103 @@ public static class NexusProminenceBuilder
         return b;
     }
 
+    // Build zzl, owner on zzk 2026-11-16: the spikes hurt but never visibly shoot up. Cause (decompiled game):
+    // the timer shows and hides the library strip with SetActive (Toggleable_Main.SetUpDownActiveObjects), and
+    // Unity resets an Animator to its default state and parameters when its object is re-enabled, so the strip
+    // came back in its holed Down pose every time; its own SetState, the only thing that plays Up, is never called.
+    // SpikesRise drops the library strip for our own rig, driven the way the SceneTools sample
+    // Samples/CO_Togglable.prefab is: the timer's CustomObj_Togglable gets LinkedAnimator = the rig's Animator,
+    // whose controller overrides Library/AnimControllers/Togglables/Toggleable_Base.controller with our Up clip
+    // (blades scale up in 0.08 s) and Down clip (back down in 0.4 s). Toggleable_Main.SetState sets ToggleMe on
+    // it; the rig is never hidden. Set false to build zzk's strips.
+    const bool SpikesRise = true;
+    const string ToggleBaseController = "Assets/Library/AnimControllers/Togglables/Toggleable_Base.controller";
+    static Mesh spikeMesh;
+    static Mesh SpikeMesh()
+    {
+        if (spikeMesh != null) return spikeMesh;
+        string path = MatDir + "/NX_SpikeMesh.asset";
+        if (AssetDatabase.LoadAssetAtPath<Mesh>(path) != null) AssetDatabase.DeleteAsset(path);
+        // a four-sided blade: square base 0.12, tip 0.7 up (flat-shaded: each face its own vertices)
+        float b = 0.06f, h = 0.7f; var tip = new Vector3(0f, h, 0f);
+        var c = new[] { new Vector3(-b, 0f, -b), new Vector3(b, 0f, -b), new Vector3(b, 0f, b), new Vector3(-b, 0f, b) };
+        var v = new List<Vector3>(); var tri = new List<int>();
+        for (int i = 0; i < 4; i++) { int k = v.Count; v.Add(c[i]); v.Add(tip); v.Add(c[(i + 1) % 4]); tri.AddRange(new[] { k, k + 1, k + 2 }); }
+        spikeMesh = new Mesh { name = "NX_SpikeMesh" };
+        spikeMesh.SetVertices(v); spikeMesh.SetTriangles(tri, 0);
+        spikeMesh.uv = v.Select(q => new Vector2(q.x + 0.5f, q.y)).ToArray();
+        spikeMesh.RecalculateNormals(); spikeMesh.RecalculateBounds();
+        AssetDatabase.CreateAsset(spikeMesh, path);
+        return spikeMesh;
+    }
+
+    static AnimatorOverrideController spikeAnim;
+    static AnimatorOverrideController SpikeAnim()
+    {
+        if (spikeAnim != null) return spikeAnim;
+        var baseCtl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ToggleBaseController);
+        if (baseCtl == null) { Debug.LogWarning("NexusProminence: " + ToggleBaseController + " missing; spikes cannot rise"); return null; }
+        AnimationClip Clip(string n, float t, float from, float to)
+        {
+            string p = MatDir + "/" + n + ".anim";
+            if (AssetDatabase.LoadAssetAtPath<AnimationClip>(p) != null) AssetDatabase.DeleteAsset(p);
+            var clip = new AnimationClip { name = n, frameRate = 60f };
+            clip.SetCurve("Blades", typeof(Transform), "m_LocalScale.y", AnimationCurve.EaseInOut(0f, from, t, to));
+            clip.SetCurve("Blades", typeof(Transform), "m_LocalScale.x", AnimationCurve.Constant(0f, t, 1f));
+            clip.SetCurve("Blades", typeof(Transform), "m_LocalScale.z", AnimationCurve.Constant(0f, t, 1f));
+            AssetDatabase.CreateAsset(clip, p);
+            return clip;
+        }
+        var up = Clip("NX_SpikesUp", 0.08f, 0.02f, 1f);
+        var down = Clip("NX_SpikesDown", 0.4f, 1f, 0.02f);
+        string op = MatDir + "/NX_Spikes.overrideController";
+        if (AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(op) != null) AssetDatabase.DeleteAsset(op);
+        var o = new AnimatorOverrideController(baseCtl) { name = "NX_Spikes" };
+        var pairs = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+        o.GetOverrides(pairs);
+        for (int i = 0; i < pairs.Count; i++)
+            pairs[i] = new KeyValuePair<AnimationClip, AnimationClip>(pairs[i].Key, pairs[i].Key.name.EndsWith("Up") ? up : down);
+        o.ApplyOverrides(pairs);
+        AssetDatabase.CreateAsset(o, op);
+        Debug.Log("NX_SPIKEANIM overrides " + string.Join(", ", pairs.Select(q => q.Key.name + "->" + q.Value.name)));
+        return spikeAnim = o;
+    }
+
+    // Our strip: dark plate with red slots, a "Blades" child of 2 x 10 blades (scaled to 0.02 = down), and the
+    // Animator the timer drives. Visual only: no colliders (Box under 0.8 tall is not solidified).
+    static Animator SpikeRig(Frame f, Transform parent, Vector3 at, string name)
+    {
+        var rig = new GameObject("NX_SpikeRig_" + name);
+        rig.transform.SetParent(parent, true); rig.transform.position = at;
+        var plate = Box(f, "SpikePlate", at.x, f.y + 0.012f, at.z, 3.0f, 0.02f, 1.1f, "dark");
+        plate.transform.SetParent(rig.transform, true);
+        var blades = new GameObject("Blades");
+        blades.transform.SetParent(rig.transform, false);
+        blades.transform.localPosition = new Vector3(0f, f.y + 0.02f - at.y, 0f);
+        blades.transform.localScale = new Vector3(1f, 0.02f, 1f);
+        var mesh = SpikeMesh();
+        for (int row = 0; row < 2; row++)
+            for (int k = 0; k < 10; k++)
+            {
+                float x = -1.35f + k * 0.3f, z = row == 0 ? -0.22f : 0.22f;
+                var slot = Box(f, "SpikeSlot", at.x + x, f.y + 0.023f, at.z + z, 0.16f, 0.004f, 0.16f, "red");
+                slot.transform.SetParent(rig.transform, true);
+                var s = new GameObject("NX_Spike");
+                s.transform.SetParent(blades.transform, false);
+                s.transform.localPosition = new Vector3(x, 0f, z);
+                s.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var r = s.AddComponent<MeshRenderer>(); r.sharedMaterial = f.M["steel"];
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+        var an = rig.AddComponent<Animator>();
+        an.runtimeAnimatorController = SpikeAnim(); an.applyRootMotion = false;
+        return an;
+    }
+
     // Spike strip that rises and drops on a timer (automator times are frames, 60 per second).
     static void Spikes(RoomObj room, Frame f, string name, float u, float v, float offsetFrames)
     {
+        if (SpikesRise) { SpikesRig(room, f, name, u, v, offsetFrames); return; }
         var src = AssetDatabase.LoadAssetAtPath<GameObject>(TogglePrefab);
         if (src == null) { Debug.LogWarning("NexusProminence: " + TogglePrefab + " missing; no spikes"); return; }
         var any = room.GetComponentsInChildren<ProxyObj_Door>(true).FirstOrDefault();
@@ -3191,6 +3285,34 @@ public static class NexusProminenceBuilder
         // Now two striped bands frame the strip front and back and nothing is drawn under it.
         foreach (var side in new[] { -1f, 1f })
             for (int k = 0; k < 6; k++) Box(f, "SpikeHazard", q.x - 1.5f + k * 0.6f, f.y + 0.01f, q.z + side * 0.72f, 0.3f, 0.004f, 0.28f, k % 2 == 0 ? "red" : "dark");
+    }
+
+    // SpikesRise: same place, timer and hazard as Spikes, but the timer drives our rig's Animator directly.
+    static void SpikesRig(RoomObj room, Frame f, string name, float u, float v, float offsetFrames)
+    {
+        var any = room.GetComponentsInChildren<ProxyObj_Door>(true).FirstOrDefault();
+        var parent = any != null ? any.transform.parent : room.transform;
+        var at = new Vector3(Mathf.Lerp(f.x0 + 2f, f.x1 - 2f, u), f.y, Mathf.Lerp(f.zf + 2f, f.zb - 1.5f, v));
+        var an = SpikeRig(f, parent, at, name);
+        var drv = new GameObject("CO_NX_SpikeTimer_" + name);
+        drv.transform.SetParent(parent, true);
+        drv.transform.position = at;
+        var c = drv.AddComponent<CustomObj_Togglable>();
+        c.StartUp = false; c.PlayFirstAnim = false; c.ResetPathNodes = false;
+        c.SerialNumber = "NXP_" + room.name + "_SpikeTimer_" + name;
+        c.LinkedAnimator = an;
+        c.UpObjs = new List<GameObject>(); c.DownObjs = new List<GameObject>();
+        // SpikeBlades only reads the strip's parent and position
+        if (SpikesHurt) c.UpObjs.Add(SpikeBlades(f, room, an.gameObject, name));
+        c.UpSound = ""; c.DownSound = "";
+        EditorUtility.SetDirty(c);
+        var a = drv.AddComponent<CustomAddon_ToggleAutomator>();
+        a.AutomatorEnabled = true; a.RunInActiveRoomOnly = true; a.OnlyRunDuringWaves = false;
+        a.TimeStayDown = 150; a.TimeStayUp = 90; a.StartTime = 60 + offsetFrames;
+        EditorUtility.SetDirty(a);
+        foreach (var side in new[] { -1f, 1f })
+            for (int k = 0; k < 6; k++) Box(f, "SpikeHazard", at.x - 1.5f + k * 0.6f, f.y + 0.01f, at.z + side * 0.72f, 0.3f, 0.004f, 0.28f, k % 2 == 0 ? "red" : "dark");
+        Debug.Log("NX_SPIKERIG " + room.name + " " + name + " at " + at + " animator " + (an.runtimeAnimatorController != null ? an.runtimeAnimatorController.name : "NONE"));
     }
 
     static void ChainDoors(List<RoomObj> rooms)
