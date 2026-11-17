@@ -67,3 +67,4 @@ Earlier history: madnesswright's ai-docs/log.md and its git history (this reposi
 - 2026-11-16: the game's decompile (current install, 985 files) is kept at ../madnesswright-lab/nexus/decomp (local only, never publish); use decomp.py find/callers on it instead of searching the disk (a disk search timed out this session). Re-decompile after a game update.
 
 - 2026-11-17: owner played zzl ("it worked great", spikes rise and hurt); released zzl to Workshop 3837705778 with tools/release.sh (upload OK, previews result 1). Set nexus-zzl-test-2026-11-16 consumed.
+- 2026-11-17: madnesswright 1.0.15 (PR m4bwav/madnesswright#141, release v1.0.15, installed): timed spikes via LinkedAnimator marked verified in play. Its installed skills folder is now at the 400 KB budget cap: the next skill addition there must trim something first or scripts/budget.py goes RED.
