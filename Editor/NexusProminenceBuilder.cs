@@ -2819,6 +2819,7 @@ public static class NexusProminenceBuilder
             case 3: // cargo bay: a rappel team drops in once the fight has started
                 if (!FilmTotals) Squad(room, f, "CargoRappel", 14f, 3, Cap(3, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 3)),
                     WeaponLoadout_STP.LoadoutPools.NEXUS_T5, SpawnDoor(room, f, "Rappel_A", ProxyObj_Door.ProxyType.Rapel, 0.45f, 0.55f));
+                else if (RappelBack) RappelTeam(room, f, index, "CargoRappel", 3, 0.30f, 0.40f);
                 break;
             case 5: // shutter garage: two spike strips across the floor, out of step with each other
                 Spikes(room, f, "A", 0.33f, 0.5f, 0f);
@@ -2838,6 +2839,7 @@ public static class NexusProminenceBuilder
                     SpawnDoor(room, f, "Vent_A", ProxyObj_Door.ProxyType.VentSide, 0.3f, 0.97f),
                     SpawnDoor(room, f, "Rappel_A", ProxyObj_Door.ProxyType.Rapel, 0.5f, 0.5f),
                     SpawnDoor(room, f, "Rappel_B", ProxyObj_Door.ProxyType.Rapel, 0.75f, 0.4f));
+                else if (RappelBack) RappelTeam(room, f, index, "TowerRappel", 2, 0.5f, 0.5f);
                 break;
         }
     }
@@ -2851,6 +2853,23 @@ public static class NexusProminenceBuilder
     // Corrected in build zv: the cap is not tested for a spawner's first squad (see ArrivalsMidFight), so the
     // three-man rappel team was never held back by it; the cap only gates the later squads of a longer wave.
     static int Cap(int zj, int zk) { return zk; }
+
+    // Build zzi, owner 2026-11-16: "the rappelling reinforcements never appear anymore". Cause: round 7 (build zq,
+    // commit 83866a8) put every Encounters squad behind !FilmTotals, so since zq no Rapel door and no rappel squad
+    // was built (build-zp.log has "squad CargoRappel", build-zq.log on have none); the README and the test lists
+    // kept promising it. RappelBack brings back room 4's three-agent team and a two-agent line in room 10, timed
+    // like the door squads (ArrivalsMidFight: after the alarm, a short delay, one squad, cap placed + door wave +
+    // team) so a fast clear never leaves it armed. It adds 3 and 2 to those rooms' film totals, on the owner's word.
+    // Set false to build zzh's encounters.
+    const bool RappelBack = true;
+    static void RappelTeam(RoomObj room, Frame f, int index, string name, int count, float u, float v)
+    {
+        int wave = FilmTotals && FilmTotalWaves[index] != null ? FilmTotalWaves[index].Sum(x => x.Count) : 0;
+        var m = Squad(room, f, name, MidFightDelay[index] + 2f, count, PlacedCount(index) + wave + count, Units(new Foe(CharacterTypes.Nexus1_Agent, count)),
+            index >= 6 ? WeaponLoadout_STP.LoadoutPools.NEXUS_T7_Ranged : WeaponLoadout_STP.LoadoutPools.NEXUS_T5,
+            SpawnDoor(room, f, name + "_Line", ProxyObj_Door.ProxyType.Rapel, u, v));
+        if (m != null) { m.SpawnRequirement = Marker_Squad.SpawnRules.MyFactionAlerted; EditorUtility.SetDirty(m); }
+    }
 
     // Round 1 (build zk): every spare door of the sample room was a framed doorway nothing came through. DoorWaves
     // sends a small reinforcement squad through them in every room, sized to a saw-tooth curve (peaks at rooms 4,
@@ -3000,6 +3019,31 @@ public static class NexusProminenceBuilder
         return m;
     }
 
+    // Build zzi, owner 2026-11-16: "the spikes never worked". Cause (decompiled game): the converter swaps the
+    // stock PX_Togglable for the library strip, a Toggleable_Main whose animator and hazard act only when its own
+    // SetState changes (Init sets it Up once at load). The CO_ timer is a second Toggleable_Main; its SetState only
+    // calls SetActive on its Up objects, so the strip was shown and hidden and never rose through anyone, and
+    // nothing else ever calls the strip's SetState. SpikesHurt adds an invisible trigger with Hazard_Core (the
+    // game's Hazard_Main: damage on OnTriggerEnter while enabled; OnceTilReset clears its hit list on OnEnable) to
+    // the same Up list, so each time the strip shows, whoever stands in it or walks in is hit once. Set false to
+    // build zzh's strips (look only).
+    const bool SpikesHurt = true;
+    static GameObject SpikeBlades(Frame f, RoomObj room, GameObject strip, string name)
+    {
+        var b = new GameObject("NX_SpikeBlades_" + name);
+        b.transform.SetParent(strip.transform.parent, true);
+        b.transform.position = strip.transform.position + new Vector3(0f, 0.6f, 0f);
+        var bc = b.AddComponent<BoxCollider>(); bc.isTrigger = true; bc.size = new Vector3(3.0f, 1.2f, 1.2f);
+        var rb = b.AddComponent<Rigidbody>(); rb.isKinematic = true; rb.useGravity = false;
+        var h = b.AddComponent<Hazard_Core>();
+        h.contactDmg = 35f; h.damageEffect = DamageEffect.Standard; h.armorPierce = 1f; h.bounceAway = 6f;
+        h.dmgType = DamageType.Piercing; h.myHitFrequency = HitFrequency.OnceTilReset; h.HitAvoid = AttackQuality.Normal;
+        h.myEffects = new List<Effects> { Effects.IgnoreDeadguys };
+        EditorUtility.SetDirty(h);
+        Debug.Log("NX_SPIKES " + room.name + " " + name + " hazard trigger at " + b.transform.position);
+        return b;
+    }
+
     // Spike strip that rises and drops on a timer (automator times are frames, 60 per second).
     static void Spikes(RoomObj room, Frame f, string name, float u, float v, float offsetFrames)
     {
@@ -3025,6 +3069,7 @@ public static class NexusProminenceBuilder
         c.StartUp = true; c.PlayFirstAnim = false; c.ResetPathNodes = false;
         c.SerialNumber = "NXP_" + room.name + "_SpikeTimer_" + name;
         c.UpObjs = new List<GameObject> { go }; c.DownObjs = new List<GameObject>();
+        if (SpikesHurt) c.UpObjs.Add(SpikeBlades(f, room, go, name));
         c.UpSound = ""; c.DownSound = "";
         EditorUtility.SetDirty(c);
         var a = drv.AddComponent<CustomAddon_ToggleAutomator>();
