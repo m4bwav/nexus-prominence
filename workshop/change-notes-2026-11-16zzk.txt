@@ -1,0 +1,3 @@
+- More height: in the shutter garage both pylons now stand on a raised platform with a hazard-striped ramp up its left side; walk up and fight from it. In the locker room the steps at the right can be climbed to their landing, with a dark hooded doorway beside them as in the film.
+- Spike traps now hurt: standing on a strip in the shutter garage or spotlight corridor when it opens hits and knocks you back.
+- Known: the spikes do not visibly shoot up yet; the holes open and close and the hit lands. Being worked on.
