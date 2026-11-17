@@ -699,7 +699,7 @@ public static class NexusProminenceBuilder
         var p = FilmTotals && FilmTotalPosts[index] != null ? (n < FilmTotalPosts[index].Length ? FilmTotalPosts[index][n] : Posts[index][n]) : Posts[index][n];
         float u = Mathf.Max(0.45f, p.u);
         // zw: the two engineers stand at the console itself, so the far pylon and the sloped blocks keep clear of them
-        if (FilmRoom6Structures && index == 5 && n < 2) u = n == 0 ? 0.47f : 0.54f;
+        if (FilmRoom6Structures && index == 5 && n < 2) u = FilmRoom6Ramp ? (n == 0 ? 0.45f : 0.51f) : n == 0 ? 0.47f : 0.54f;
         // zz: the sword agent stands left of the steps, between them and the free cabinet
         if (FilmRoom8Structures && index == 7 && n == 1) u = 0.62f;
         go.transform.position = new Vector3(Mathf.Lerp(f.x0 + 1f, f.x1 - 1f, u), go.transform.position.y, Mathf.Lerp(fb.min.z + 2f, f.zb - 1.5f, p.v));
@@ -1449,20 +1449,29 @@ public static class NexusProminenceBuilder
     static RoomObj curRoom;
     static void DeckRamp(Frame f, float dx1, float rl, float dh, float dd)
     {
+        WalkRamp(f, "Deck", "room 4 deck", new Vector3(dx1, 0f, f.zb - dd / 2), Vector3.right, rl, dh, dd);
+    }
+    // zzj: DeckRamp generalised for any direction. edge = the raised floor's edge (x, z) where the ramp meets it;
+    // down = the horizontal way toward the ramp's foot; width across the ramp. Same recipe as room 4: an invisible
+    // straight box on layer Interactive, 0.1 into the top at the head and buried 0.2 at the foot, so neither end has a
+    // lip; a waypoint a unit clear of the foot (floor) and one a unit onto the top, ForceConnect both ways.
+    static void WalkRamp(Frame f, string tag, string what, Vector3 edge, Vector3 down, float rl, float dh, float width)
+    {
         float ang = Mathf.Atan2(dh, rl), len = Mathf.Sqrt(rl * rl + dh * dh), th = 0.3f, over = 0.1f, bury = 0.2f;
         float full = len + (over + bury) / Mathf.Cos(ang);
-        // top surface line: from the head (dx1 - over, deck top + over*tan) down to the foot (dx1 + rl + bury, floor - bury*tan)
-        float tx0 = dx1 - over, ty0 = f.y + dh + over * Mathf.Tan(ang), tx1 = dx1 + rl + bury, ty1 = f.y - bury * Mathf.Tan(ang);
-        var mid = new Vector3((tx0 + tx1) / 2, (ty0 + ty1) / 2, f.zb - dd / 2);
-        var n = new Vector3(Mathf.Sin(ang), Mathf.Cos(ang), 0f); // top face normal, leaning toward the foot
-        var r = new GameObject("NX_DeckRampCollider");
+        down.y = 0f; down.Normalize(); edge.y = 0f;
+        var top0 = edge - down * over + Vector3.up * (f.y + dh + over * Mathf.Tan(ang));
+        var top1 = edge + down * (rl + bury) + Vector3.up * (f.y - bury * Mathf.Tan(ang));
+        var mid = (top0 + top1) / 2;
+        var n = down * Mathf.Sin(ang) + Vector3.up * Mathf.Cos(ang); // top face normal, leaning toward the foot
+        var fwd = down * Mathf.Cos(ang) - Vector3.up * Mathf.Sin(ang);
+        var r = new GameObject("NX_" + tag + "RampCollider");
         r.transform.SetParent(f.Parent, true);
         r.transform.position = mid - n * (th / 2);
-        r.transform.rotation = Quaternion.Euler(0f, 0f, -ang * Mathf.Rad2Deg);
+        r.transform.rotation = Quaternion.LookRotation(fwd, n);
         var bc = r.AddComponent<BoxCollider>();
-        bc.size = new Vector3(full, th, dd - 0.1f);
+        bc.size = new Vector3(width - 0.1f, th, full);
         r.layer = InteractiveLayer; r.isStatic = true;
-        // waypoints at the foot (on the floor, a unit clear of the ramp) and on the deck by the head, linked both ways
         var proto = curRoom != null ? curRoom.GetComponentsInChildren<Marker_Waypoint>(true).FirstOrDefault(w => w.Type == Marker_Waypoint.MarkerType.Standard) : null;
         var parent = proto != null ? proto.transform.parent : (curRoom != null ? (curRoom.transform.Find("Waypoints") ?? curRoom.transform) : f.Parent);
         Marker_Waypoint Wp(string name, Vector3 at)
@@ -1473,11 +1482,27 @@ public static class NexusProminenceBuilder
             var w = go.GetComponent<Marker_Waypoint>(); w.Type = Marker_Waypoint.MarkerType.Standard; w.Floating = false; w.ForceConnect = new List<Marker_Waypoint>();
             return w;
         }
-        var foot = Wp("Waypoint_DeckRampFoot", new Vector3(dx1 + rl + 1.0f, f.y + 0.1f, f.zb - dd / 2));
-        var head = Wp("Waypoint_DeckRampHead", new Vector3(dx1 - 1.0f, f.y + dh + 0.1f, f.zb - dd / 2));
+        var foot = Wp("Waypoint_" + tag + "RampFoot", edge + down * (rl + 1.0f) + Vector3.up * (f.y + 0.1f));
+        var head = Wp("Waypoint_" + tag + "RampHead", edge - down * 1.0f + Vector3.up * (f.y + dh + 0.1f));
         foot.ForceConnect.Add(head); head.ForceConnect.Add(foot);
-        Debug.Log("NX_WALKABLE room 4 deck top " + (f.y + dh).ToString("0.###") + " ramp " + (ang * Mathf.Rad2Deg).ToString("0.#") + " deg over " + rl.ToString("0.##") + " units; waypoints " + (proto != null ? "cloned" : "new") + " under " + parent.name);
+        Debug.Log("NX_WALKABLE " + what + " top " + (f.y + dh).ToString("0.###") + " ramp " + (ang * Mathf.Rad2Deg).ToString("0.#") + " deg over " + rl.ToString("0.##") + " units; waypoints " + (proto != null ? "cloned" : "new") + " under " + parent.name);
     }
+    // zzj: waypoints the template left inside a raised floor's footprint would sit inside its collider; lift them onto
+    // the top (SnapToFloor then lands them on the Floor-tagged top). Ones over a ramp move to its foot side.
+    static void LiftWaypoints(Bounds top, float y, string what)
+    {
+        if (curRoom == null) return;
+        int k = 0;
+        foreach (var w in curRoom.GetComponentsInChildren<Marker_Waypoint>(true))
+        {
+            var p = w.transform.position;
+            if (p.x < top.min.x - 0.3f || p.x > top.max.x + 0.3f || p.z < top.min.z - 0.3f || p.z > top.max.z + 0.3f || w.name.Contains("Ramp")) continue;
+            w.transform.position = new Vector3(Mathf.Clamp(p.x, top.min.x + 0.6f, top.max.x - 0.6f), y + 0.1f, Mathf.Clamp(p.z, top.min.z + 0.6f, top.max.z - 0.6f)); k++;
+        }
+        Debug.Log("NX_WALKABLE " + what + " waypoints lifted onto the top: " + k);
+    }
+    // A copy of the frame standing on a raised floor (pieces built with it start at the raised top).
+    static Frame Raised(Frame f, float dh) { return new Frame { Parent = f.Parent, x0 = f.x0, x1 = f.x1, zb = f.zb, zf = f.zf, y = f.y + dh, M = f.M, Doors = f.Doors }; }
     static void FilmCargo(Frame f)
     {
         float u(float a) => f.x0 + a * f.W;
@@ -1669,7 +1694,9 @@ public static class NexusProminenceBuilder
         // 8-9: the pylons at film size, far near the back wall, near one in front of it
         // the pylon body starts on its 0.24 plinth, so Solidify (floor pieces only) never gave zv's pylons a
         // collider: give the film pylons one over plinth and body, as tall as the body
-        foreach (var py in new[] { Pylon(f, u(0.70f), f.zb - 2.5f, 4.1f, 3.0f, 2.2f), Pylon(f, u(0.765f), f.zb - 8.6f, 3.2f, 2.7f, 2.0f) }) // zzh: near pylon 1.6 further out, a 3-unit way between them (glitch shot 4)
+        var pf = f;
+        if (FilmRoom6Ramp) pf = PylonDeck(f);
+        foreach (var py in new[] { Pylon(pf, u(0.70f), f.zb - 2.5f, 4.1f, 3.0f, 2.2f), Pylon(pf, u(0.765f), f.zb - 8.6f, 3.2f, 2.7f, 2.0f) }) // zzh: near pylon 1.6 further out, a 3-unit way between them (glitch shot 4)
         {
             if (py == null) continue;
             var bc = py.AddComponent<BoxCollider>();
@@ -1678,6 +1705,54 @@ public static class NexusProminenceBuilder
             py.layer = ObstacleLayer; solidCount++;
             filmStructures.Add(py);
         }
+    }
+
+    // Build zzj (owner, after playing zzh: "no ramp up to the pylons"): the film's raised platform under both pylons
+    // (frames t534 = 8:54 and t541 = 9:01 in the lab's film-geometry/height-zzi/) with hazard-striped steps down its
+    // left flank between the two tall sloped blocks. Built as one walkable floor 0.675 units high (room 4's proven
+    // height and recipe, floor-height-research.md): u 0.62-0.80, from the back wall to 10 units out, collider on layer
+    // Terrain with tag Floor; the pylons stand on it; a striped walkable ramp (14 degrees, 2.7 units, as room 8's
+    // steps) runs down its left flank toward the console, 3.2 to 5.9 units out, in the gap between the sloped blocks.
+    // The film's lower tier is merged into the one height: the game has no step-up, so every lip needs its own ramp.
+    // Its open front and right edges are 0.675 high, under the 2-unit link gap, so no PathBlock. The engineers move a
+    // little left (u 0.45, 0.51) to stay clear of the ramp's foot; spike strip B moves out (v 0.4) off the platform.
+    // Set false to build zzi's room 6 (pylons on the floor).
+    const bool FilmRoom6Ramp = true;
+    static Frame PylonDeck(Frame f)
+    {
+        float u(float a) => f.x0 + a * f.W;
+        float dh = 0.675f, x0 = u(0.62f), x1 = u(0.80f), depth = 10f, zc = f.zb - depth / 2;
+        var deck = Box(f, "PylonDeck", (x0 + x1) / 2, f.y + dh / 2, zc, x1 - x0, dh, depth, "panel");
+        if (deck.GetComponent<BoxCollider>() == null) { deck.AddComponent<BoxCollider>(); solidCount++; }
+        deck.layer = TerrainLayer; deck.tag = "Floor";
+        filmStructures.Add(deck);
+        // red top edge along the front and the left flank, hazard stripes on the front face
+        Box(f, "PylonDeckEdge", (x0 + x1) / 2, f.y + dh + 0.02f, f.zb - depth + 0.06f, x1 - x0, 0.04f, 0.12f, "red");
+        Box(f, "PylonDeckEdge", x0 + 0.06f, f.y + dh + 0.02f, zc + 0.06f, 0.12f, 0.04f, depth - 0.12f, "red"); // stops at the front edge (S26)
+        for (float x = x0 + 0.3f; x < x1 - 0.2f; x += 0.9f) Box(f, "PylonDeckStripe", x, f.y + dh / 2, f.zb - depth - 0.02f, 0.35f, dh - 0.1f, 0.02f, "red");
+        // the ramp down the left flank: drawn wedge (no collider), stripes across it, the walkable box under it
+        float rl = 2.7f, rz0 = 3.2f, rz1 = 5.9f, rw = rz1 - rz0, rzc = f.zb - (rz0 + rz1) / 2, ang = Mathf.Atan2(dh, rl);
+        var ramp = Wedge(f, "PylonRamp", x0 - rl / 2, f.y, rzc, rl, dh, rw, 0.0f, "steel", true);
+        var rc = ramp.GetComponent<Collider>(); if (rc != null) Object.DestroyImmediate(rc);
+        filmStructures.Add(ramp);
+        for (int k = 0; k < 5; k++)
+        {
+            float t = (k + 0.5f) / 5f, x = x0 - rl + t * rl;
+            var st = Box(f, "PylonRampStripe", x, f.y + dh * t + 0.03f, rzc, 0.28f, 0.03f, rw - 0.1f, k % 2 == 0 ? "red" : "dark");
+            st.transform.rotation = Quaternion.Euler(0f, 0f, ang * Mathf.Rad2Deg);
+        }
+        WalkRamp(f, "Pylon", "room 6 pylon deck", new Vector3(x0, 0f, rzc), Vector3.left, rl, dh, rw);
+        LiftWaypoints(deck.GetComponent<Renderer>().bounds, f.y + dh, "room 6 pylon deck");
+        // waypoints over the ramp would snap under it (SnapToFloor ignores Interactive): move them past its foot
+        if (curRoom != null)
+            foreach (var w in curRoom.GetComponentsInChildren<Marker_Waypoint>(true))
+            {
+                var p = w.transform.position;
+                if (w.name.Contains("Ramp") || p.x < x0 - rl - 0.3f || p.x > x0 || p.z < f.zb - rz1 - 0.3f || p.z > f.zb - rz0 + 0.3f) continue;
+                w.transform.position = new Vector3(x0 - rl - 1.2f, p.y, p.z);
+                Debug.Log("NX_WALKABLE room 6 waypoint " + w.name + " moved off the ramp");
+            }
+        return Raised(f, dh);
     }
 
     // Low wall with a sloped front face and a red top edge (the film's barricades).
@@ -2009,9 +2084,20 @@ public static class NexusProminenceBuilder
         filmStructures.Add(landing);
         // the treads are under Solidify's 0.8 height floor, so one collider covers landing and treads (solid, not a route)
         float run = 1.2f * m + 4f * tread;
-        var sc = landing.AddComponent<BoxCollider>();
-        sc.size = new Vector3(1f, 1f, run / (1.2f * m)); sc.center = new Vector3(0f, 0f, -(run - 1.2f * m) / 2f / (1.2f * m));
-        landing.layer = ObstacleLayer; solidCount++;
+        var sc = landing.GetComponent<BoxCollider>(); if (sc == null) sc = landing.AddComponent<BoxCollider>(); // never ?? on a Unity component (fake null)
+        if (FilmRoom8Steps)
+        {
+            // zzj: the landing is a floor (layer Terrain, tag Floor), the treads are drawn only, an invisible ramp lies over them
+            sc.size = Vector3.one; sc.center = Vector3.zero;
+            landing.layer = TerrainLayer; landing.tag = "Floor"; solidCount++;
+            WalkRamp(f, "Steps", "room 8 steps", new Vector3(sx, 0f, f.zb - 1.2f * m), Vector3.back, 4f * tread, rise, sw);
+            StepsDoorway(f, f.x1 - 2.0f); // right of the wall pipe, clear of its box and the corner post
+        }
+        else
+        {
+            sc.size = new Vector3(1f, 1f, run / (1.2f * m)); sc.center = new Vector3(0f, 0f, -(run - 1.2f * m) / 2f / (1.2f * m));
+            landing.layer = ObstacleLayer; solidCount++;
+        }
         Box(f, "StepLandingEdge", sx, f.y + rise + 0.02f, f.zb - 1.2f * m + 0.06f, sw + 0.02f, 0.04f, 0.12f, "red");
         for (int k = 1; k <= 4; k++)
         {
@@ -2019,6 +2105,23 @@ public static class NexusProminenceBuilder
             filmStructures.Add(Box(f, "Step", sx, f.y + h / 2, z, sw, h, tread, k % 2 == 0 ? "panel" : "steel"));
             Box(f, "StepNose", sx, f.y + h + 0.01f, z - tread / 2 + 0.04f, sw + 0.02f, 0.03f, 0.1f, k % 2 == 0 ? "red" : "white");
         }
+    }
+
+    // Build zzj (owner, after playing zzh: "no steps next to a door"): the film's steps stand right beside a dark back
+    // doorway under a hood (frame t495 = 8:15 in the lab's film-geometry/height-zzi/). The steps become walkable by room
+    // 4's recipe: the landing (0.675 units) is a floor on layer Terrain with tag Floor, the four treads are drawn only,
+    // and an invisible Interactive ramp over them (2.7 units, 14 degrees) carries characters up, waypoints at foot and
+    // landing. The doorway is drawn on the back wall right of the landing (dark opening, frame, hood): backdrop, not a
+    // door, so the route and the right-wall door are untouched. Set false to build zzi's solid stepped block.
+    const bool FilmRoom8Steps = true;
+    static void StepsDoorway(Frame f, float x)
+    {
+        float m = 1.5f, w = 1.4f * m, h = 2.3f * m;
+        Box(f, "BackDoorFrame", x, f.y + h / 2 + 0.08f, f.zb - 0.06f, w + 0.3f, h + 0.16f, 0.06f, "dark");
+        Box(f, "BackDoorOpening", x, f.y + h / 2, f.zb - 0.1f, w, h, 0.03f, "black");
+        Box(f, "BackDoorHood", x, f.y + h + 0.3f, f.zb - 0.45f, w + 0.3f, 0.18f, 0.9f, "steel");
+        Box(f, "BackDoorHoodEdge", x, f.y + h + 0.3f, f.zb - 0.92f, w + 0.32f, 0.2f, 0.04f, "red");
+        Box(f, "BackDoorSill", x, f.y + 0.02f, f.zb - 0.4f, w, 0.04f, 0.6f, "red");
     }
 
     // 9: break room: serving counter under a row of glowing menu panels, tables, a drum.
@@ -2823,7 +2926,7 @@ public static class NexusProminenceBuilder
                 break;
             case 5: // shutter garage: two spike strips across the floor, out of step with each other
                 Spikes(room, f, "A", 0.33f, 0.5f, 0f);
-                Spikes(room, f, "B", 0.66f, 0.5f, 120f);
+                Spikes(room, f, "B", 0.66f, FilmRoom6Ramp ? 0.4f : 0.5f, 120f); // zzj: off the pylon deck
                 break;
             case 6: // spotlight corridor: agents crawl out of the wall vents; one spike strip mid-corridor
                 if (!FilmTotals) Squad(room, f, "CorridorVents", 10f, 2, Cap(4, 5), Units(new Foe(CharacterTypes.Nexus1_Agent, 4)),
