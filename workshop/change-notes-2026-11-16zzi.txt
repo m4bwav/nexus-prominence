@@ -1,0 +1,2 @@
+- Rappel team is back: the agents drop in on ropes again in the cargo bay and the control tower.
+- Spike traps: work in progress (they show and hide, but may not hurt yet).
