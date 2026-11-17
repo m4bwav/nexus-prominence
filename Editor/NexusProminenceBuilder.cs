@@ -3130,17 +3130,23 @@ public static class NexusProminenceBuilder
     // game's Hazard_Main: damage on OnTriggerEnter while enabled; OnceTilReset clears its hit list on OnEnable) to
     // the same Up list, so each time the strip shows, whoever stands in it or walks in is hit once. Set false to
     // build zzh's strips (look only).
+    // Build zzk, owner 2026-11-16: zzi's spikes still never hurt. Cause (decompiled game): with HitAvoid = Normal
+    // Hazard_Core.cs:22 sets hitRange = (int)HitAvoid = 1, Hazard_Main.cs:286 marks the hit DamageSource.Terrain
+    // (not IgnoreThreshold/KillHit), and Combat_CharacterHit.cs:540 skips the dodge check only when range == -1, so
+    // an alert character's tac bar turned every hit into a TacDodge (no damage, no log line). Fix as the game's own
+    // Samples/CO_Vessel.prefab: HitAvoid Undodgable (-1), damageEffect IgnoreThreshold (2), trigger on layer 12.
     const bool SpikesHurt = true;
     static GameObject SpikeBlades(Frame f, RoomObj room, GameObject strip, string name)
     {
         var b = new GameObject("NX_SpikeBlades_" + name);
+        b.layer = 12;
         b.transform.SetParent(strip.transform.parent, true);
         b.transform.position = strip.transform.position + new Vector3(0f, 0.6f, 0f);
         var bc = b.AddComponent<BoxCollider>(); bc.isTrigger = true; bc.size = new Vector3(3.0f, 1.2f, 1.2f);
         var rb = b.AddComponent<Rigidbody>(); rb.isKinematic = true; rb.useGravity = false;
         var h = b.AddComponent<Hazard_Core>();
-        h.contactDmg = 35f; h.damageEffect = DamageEffect.Standard; h.armorPierce = 1f; h.bounceAway = 6f;
-        h.dmgType = DamageType.Piercing; h.myHitFrequency = HitFrequency.OnceTilReset; h.HitAvoid = AttackQuality.Normal;
+        h.contactDmg = 35f; h.damageEffect = DamageEffect.IgnoreThreshold; h.armorPierce = 1f; h.bounceAway = 6f;
+        h.dmgType = DamageType.Piercing; h.myHitFrequency = HitFrequency.OnceTilReset; h.HitAvoid = AttackQuality.Undodgable;
         h.myEffects = new List<Effects> { Effects.IgnoreDeadguys };
         EditorUtility.SetDirty(h);
         Debug.Log("NX_SPIKES " + room.name + " " + name + " hazard trigger at " + b.transform.position);
